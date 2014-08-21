@@ -1,0 +1,22 @@
+svg {
+  font: 13px sans-serif;
+  fill: #636363;
+}
+
+.line path {
+  fill: none;
+  stroke-width: 2;
+  stroke-opacity: 0.4;
+  pointer-events: none;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #AEAEAE;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
