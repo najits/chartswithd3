@@ -1,7 +1,7 @@
 function drawChart() {
 
-  var margin = {top: 0, right: 80, bottom: 10, left: 80},
-      width = 850 - margin.left - margin.right,
+  var margin = {top: 0, right: 200, bottom: 10, left: 100},
+      width = 1000 - margin.left - margin.right,
       height = 400 - margin.top - margin.bottom;
 
   var x = {},
@@ -22,14 +22,19 @@ function drawChart() {
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  d3.csv("data.csv", function(error, data) {
+  d3.csv("data.csv", function(error, csv) {
 
     // Extract the list of dimensions and create a scale for each.
-    y.domain(dimensions = d3.keys(data[0]).filter(function(p) {
+    y.domain(dimensions = d3.keys(csv[0]).filter(function(p) {
       return p != "Portfolio" && (x[p] = d3.scale.linear()
-          .domain(d3.extent(data, function(d) { return +d[p]; }))
+          .domain(d3.extent(csv, function(d) { return +d[p]; }))
           .range([0, width]));
     }));
+
+    // Ignore __MIN and __MAX rows in data
+    data = csv.filter(function(d) {
+      return d.Portfolio != "__MIN" && d.Portfolio != "__MAX";
+    });
 
     // Create portfolio color palette.
     var color = (data.length > 2) ? d3.scale.ordinal()
@@ -52,7 +57,7 @@ function drawChart() {
                 .call(axis.scale(x[p])); })
       .append("text")
         .style("text-anchor", "middle")
-        .attr("x", -40)
+        .attr("x", -55)
         .attr("y", 5)
         .text(function(p) { return p; });
 
@@ -74,7 +79,7 @@ function drawChart() {
               .duration(1750)
             .attr("cx", function(d) { return x[p](d[p]); })
             .style("stroke-width", 0.5)
-            .style("fill-opacity", 0.85)
+            .style("fill-opacity", 0.80)
             .style("stroke", "#636363")
             .each("end", function() {
               d3.select(this)
@@ -98,21 +103,28 @@ function drawChart() {
       // Remove path and label on mouseout.
       .on("mouseout", function() {
           d3.select(this)
-            .style("pointer-events", null) // To avoid listener conflict
             .transition()
-              .attr("r", radiusNormal);
+              .attr("r", radiusNormal)
+              .each("end", function() {
+                d3.select(this)
+                  .style("pointer-events", null);
+              });
           removeLinesLabels();
         })
       // Re-scale axes on click.
       .on("click", function(d) {
           d3.select(this)
             .transition()
-              .attr("r", radiusNormal);
+              .attr("r", radiusNormal)
+              .each("end", function() {
+                d3.select(this)
+                  .style("pointer-events", null);
+              });
           removeLinesLabels();
 
           dimensions.map(function(p) {
               centerVal = +d[p];
-              x[p].domain(d3.extent(data, function(d) { return +d[p]; }));
+              x[p].domain(d3.extent(csv, function(d) { return +d[p]; }));
               minMax = x[p].domain();
               distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
               maxDistFromCenter = d3.max(distFromCenter);
@@ -123,17 +135,16 @@ function drawChart() {
           d3.select(this.parentNode)
             .each(function(p) { pValue = p; });
           d3.select(this)
-            .attr("cx", function(d) { return x[pValue](d[pValue]); })
-            .style("pointer-events", null);
+            .attr("cx", function(d) { return x[pValue](d[pValue]); });
 
           g.each(function(p) {
             d3.select(this).selectAll(".axis")
-              .transition().duration(1000)
+              .transition().duration(750)
                 .call(axis.scale(x[p]));
+
             d3.select(this).selectAll(".circles")
-              .style("pointer-events", "none")
               .transition()
-                .duration(1000)
+                .duration(750)
                 .each("start", function() {
                   d3.select(this)
                     .style("pointer-events", "none");

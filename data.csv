@@ -1,6 +1,8 @@
-Portfolio,Metric 1,Metric 2,Metric 3,Metric 4
-Model 1,2.0,12,3.3,0.50
-Model 2,2.25,15,6.7,1.25
-Model 3,2.50,11,9.4,0.44
-Model 4,6.5,10,4.2,0.95
-Model 5,-1.13,18,5.5,0.15
+Portfolio,Expense Ratio,Dist. Yield,Total Risk,IG Spread Beta
+Strategic LT Allocation 20/80,0.12,2.23,4.32,-2.53
+Strategic LT Allocation 40/60,0.12,2.14,6.44,-5.65
+Strategic LT Allocation 60/40,0.12,2.06,9.14,-8.80
+Strategic LT Allocation 80/20,0.12,1.97,11.93,-11.87
+Strategic LT Allocation 100/0,0.11,1.86,14.7,-14.84
+__MIN,0.00,0.00,0.00,5.00
+__MAX,1.00,5.00,20.00,-15.00
