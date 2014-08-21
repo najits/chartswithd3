@@ -112,16 +112,11 @@ function drawChart() {
 
           dimensions.map(function(p) {
               centerVal = +d[p];
-              console.log(centerVal);
               x[p].domain(d3.extent(data, function(d) { return +d[p]; }));
               minMax = x[p].domain();
-              console.log(minMax);
               distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
-              console.log(distFromCenter);
               maxDistFromCenter = d3.max(distFromCenter);
-              console.log(maxDistFromCenter);
               x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
-              console.log(x[p].domain());
           });
 
           // To avoid listener conflict with transition below
