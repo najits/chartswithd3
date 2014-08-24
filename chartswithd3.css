@@ -1,5 +1,8 @@
-svg {
-  font: 13px sans-serif;
+#chart {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  font: 15px sans-serif;
   fill: #636363;
 }
 
@@ -19,4 +22,11 @@ svg {
 
 .axis text {
   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.reset {
+  left: 85%;
+  top: 5%;
+  position: absolute;
+  color: #636363;
 }
