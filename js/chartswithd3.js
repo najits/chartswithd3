@@ -7,11 +7,11 @@ var outerWidth = parseInt(chart.style("width")),
     width = outerWidth - margin.left - margin.right - padding.left - padding.right,
     height = outerHeight - margin.top - margin.bottom;
 
-var x = {},
+var x = {}, origExtent = {},
     y = d3.scale.ordinal().rangePoints([0, height], 1);
 
 var line = d3.svg.line(),
-    axis = d3.svg.axis().ticks(width > 600 ? 6 : 3);
+    axis = d3.svg.axis().ticks(tickNumber(width)).outerTickSize(0);
 
 var radiusNormal = 8,
     radiusLarge = 12;
@@ -26,14 +26,20 @@ var svg = chart.append("svg")
           .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.csv("data.csv", function(error, csv) {
+d3.csv("data/data.csv", function(error, csv) {
 
-  // Extract the list of dimensions and create a scale for each.
+  // Extract the list of dimensions.
   y.domain(dimensions = d3.keys(csv[0]).filter(function(p) {
-    return p != "Portfolio" && (x[p] = d3.scale.linear()
-        .domain(d3.extent(csv, function(d) { return +d[p]; }))
-        .range([0, width]));
+    return p != "Portfolio"
   }));
+
+  // Create a scale for each dimension.
+  dimensions.map(function(p) {
+    origExtent[p] = d3.extent(csv, function(d) { return +d[p]; });
+    // x[p] = (p === "Total Risk") ? d3.scale.pow().exponent(2) : d3.scale.linear();
+    // x[p].domain(origExtent[p]).range([0, width]);
+    x[p] = d3.scale.linear().domain(origExtent[p]).range([0, width]);
+  });
 
   // Ignore __MIN and __MAX rows in data.
   data = csv.filter(function(d) {
@@ -60,7 +66,8 @@ d3.csv("data.csv", function(error, csv) {
     .each(function(p) {
         d3.select(this)
           .transition().duration(1750)
-            .call(axis.scale(x[p])); })
+            .call(axis.scale(x[p]));
+          })
     .append("text")
       .style("text-anchor", "end")
       .attr("x", -5)
@@ -91,7 +98,7 @@ d3.csv("data.csv", function(error, csv) {
           .delay(function(d, i) { return i * 300; })
           .duration(1750)
         .attr("cx", function(d) { return x[p](d[p]); })
-        .style("fill-opacity", 0.70)
+        .style("fill-opacity", 0.7)
         .style("stroke", "#636363")
         .each("end", function() {
           d3.select(this)
@@ -109,7 +116,7 @@ d3.csv("data.csv", function(error, csv) {
           .append("text")
             .attr("class", "label")
             .text(d.Portfolio)
-            .attr("x", parseFloat(d3.select(this).attr("cx")) - 5 )
+            .attr("x", parseFloat(d3.select(this).attr("cx")) - 5)
             .attr("y", -15);
         drawLine(d, color);
       })
@@ -122,7 +129,8 @@ d3.csv("data.csv", function(error, csv) {
               d3.select(this)
                 .style("pointer-events", null);
             });
-        removeLinesLabels();
+        removeLines();
+        removeLabels();
       })
     // Re-scale axes on click, centering all axes on data value of clicked item.
     .on("click", function(d) {
@@ -134,19 +142,20 @@ d3.csv("data.csv", function(error, csv) {
               d3.select(this)
                 .style("pointer-events", null);
             });
-        removeLinesLabels();
+        removeLabels();
+        removeLines();
 
-        // Recompute x axis domains, centering on data value of clicked item.
+        // Recompute x axis domains, centering on data value of clicked circle.
         dimensions.map(function(p) {
             centerVal = +d[p];
-            x[p].domain(d3.extent(csv, function(d) { return +d[p]; }));
+            x[p].domain(origExtent[p]);
             minMax = x[p].domain();
             distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
             maxDistFromCenter = d3.max(distFromCenter);
             x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
         });
 
-        // Transition clicked circle instantenously to void conflict between transition and listeners.
+        // Transition clicked circle instantenously to void conflicts with mouseover/mouseout.
         d3.select(this.parentNode)
           .each(function(p) { pValue = p; });
         d3.select(this)
@@ -154,14 +163,23 @@ d3.csv("data.csv", function(error, csv) {
 
         // Re-draw and animate x axes and circles using new domains.
         reScale(g);
+
+        // setTimeout(function() { drawLine(d, color) }, 750);
+        // d3.select(".line").select("path")
+        //   .transition()
+        //     .duration(750)
+        //     .attr("d", path(d));
     });
 
     // Reset chart to original scale on button click
     chart.select(".reset")
       .on("click", function() {
-          // Reset x axis domain to original.
+          removeLines();
+          removeLabels();
+
+          // Reset x axis domain to original extent.
           dimensions.map(function(p) {
-            x[p].domain(d3.extent(csv, function(d) { return +d[p]; }));
+            x[p].domain(origExtent[p]);
           });
 
           // Re-draw and animate x axes and circles using new domains.
@@ -195,7 +213,7 @@ function reSize() {
     .attr("transform", function(p) { return "translate( " + padding.left + ", " + y(p) + ")"; });
 
   // Update number of ticks displayed.
-  axis.ticks(width > 600 ? 6 : 3);
+  axis.ticks(tickNumber(width));
 
   // Update x range for axes.
   svg.selectAll(".axis")
@@ -211,7 +229,6 @@ function reSize() {
 // Redraws axes and circles.
 function reScale (g) {
   g.each(function(p) {
-
     d3.select(this).selectAll(".axis")
       .transition().duration(750)
         .call(axis.scale(x[p]));
@@ -231,9 +248,13 @@ function reScale (g) {
   });
 }
 
-// Removes lines and labels.
-function removeLinesLabels () {
+// Removes lines.
+function removeLines () {
   svg.selectAll(".line").remove();
+}
+
+// Removes labels.
+function removeLabels () {
   svg.selectAll(".label").remove();
 }
 
@@ -250,4 +271,9 @@ function drawLine(d, color) {
 // Returns the path for a given data point.
 function path(d) {
   return line(dimensions.map(function(p) { return [x[p](d[p]), y(p)]; }));
+}
+
+// Returns number of axis ticks based on chart width.
+function tickNumber(width) {
+  return width > 600 ? 6 : 2;
 }
