@@ -3,7 +3,7 @@ var chart = d3.select("#chart");
 var outerWidth = parseInt(chart.style("width")),
     outerHeight = parseInt(chart.style("height")),
     margin = {top: 20, right: 10, bottom: 20, left: 10},
-    padding = {left: 100, right: 100},
+    padding = {left: 120, right: 100},
     width = outerWidth - margin.left - margin.right - padding.left - padding.right,
     height = outerHeight - margin.top - margin.bottom;
 
@@ -47,11 +47,9 @@ d3.csv("data/data.csv", function(error, csv) {
   });
 
   // Create portfolio color palette.
-  var color = (data.length > 2) ?
-                d3.scale.ordinal()
-                  .domain(data.map(function(d) { return d.Portfolio; }))
-                  .range(colorbrewer.YlGnBu[data.length])
-                : d3.scale.category10();
+  var color = d3.scale.ordinal()
+                .domain(data.map(function(d) { return d.Portfolio; }))
+                .range(["#55BE65", "#269DD6", "#7E408A", "#D35158", "#F09C26"]);
 
   // Add a group element for each dimension.
   var g = svg.selectAll(".dimension")
@@ -70,15 +68,16 @@ d3.csv("data/data.csv", function(error, csv) {
           })
     .append("text")
       .style("text-anchor", "end")
-      .attr("x", -5)
+      .attr("x", -10)
       .attr("y", 5)
       .text(function(p) { return p; });
 
-  // Add reset button.
+  // Add and hide reset button.
   chart.append("input")
     .attr("type","button")
     .attr("value", "Reset")
-    .attr("class", "reset");
+    .attr("class", "reset")
+    .style("display", "none");
 
   // Add and animate circles on each dimension.
   g.each(function(p) {
@@ -90,8 +89,8 @@ d3.csv("data/data.csv", function(error, csv) {
       .style("fill", function(d) { return color(d.Portfolio); })
       .style("stroke-width", 0.5)
       //animated items
-      .attr("cx", function(d, i) { return (i * -5) - 10; })
-      .style("fill-opacity", 0.1)
+      .attr("cx", -250)
+      .style("fill-opacity", 0.3)
       .style("stroke", function(d) { return color(d.Portfolio); })
       .style("pointer-events", "none")
         .transition()
@@ -99,7 +98,7 @@ d3.csv("data/data.csv", function(error, csv) {
           .duration(1750)
         .attr("cx", function(d) { return x[p](d[p]); })
         .style("fill-opacity", 0.7)
-        .style("stroke", "#636363")
+        .style("stroke", "#333333")
         .each("end", function() {
           d3.select(this)
             .style("pointer-events", null);
@@ -110,18 +109,37 @@ d3.csv("data/data.csv", function(error, csv) {
   svg.selectAll(".circles")
     // Generate path and label on mouseover and circle radius enlarge effect.
     .on("mouseover", function(d) {
+        // Animate circle radius.
         d3.select(this)
           .attr("r", radiusLarge);
+
+        // Add data series labels.
         d3.select(this.parentNode)
-          .append("text")
-            .attr("class", "label")
+          .each(function(p) { pValue = p; });
+        xTransform = parseFloat(d3.select(this).attr("cx")) - 5;
+
+        labels = d3.select(this.parentNode)
+                  .append("g")
+                  .attr("class", "labels")
+                  .attr("transform", "translate( " + xTransform + ", 0)")
+                  .style("text-anchor", "start");
+
+        labels.append("text")
+            .attr("class", "nameLabel")
             .text(d.Portfolio)
-            .attr("x", parseFloat(d3.select(this).attr("cx")) - 5)
+            .attr("y", -30);
+
+        labels.append("text")
+            .attr("class", "valueLabel")
+            .text(pValue + ": " + d[pValue])
             .attr("y", -15);
+
+        // Add path connecting data series across dimensions.
         drawLine(d, color);
       })
     // Remove path and label on mouseout and change circle radius back to normal.
     .on("mouseout", function() {
+        // Animate circle radius and turn pointer-events back on.
         d3.select(this)
           .transition()
             .attr("r", radiusNormal)
@@ -129,6 +147,7 @@ d3.csv("data/data.csv", function(error, csv) {
               d3.select(this)
                 .style("pointer-events", null);
             });
+        // Remove lines and labels.
         removeLines();
         removeLabels();
       })
@@ -164,6 +183,10 @@ d3.csv("data/data.csv", function(error, csv) {
         // Re-draw and animate x axes and circles using new domains.
         reScale(g);
 
+        // Display reset button.
+        d3.select(".reset")
+          .style("display", null);
+
         // setTimeout(function() { drawLine(d, color) }, 750);
         // d3.select(".line").select("path")
         //   .transition()
@@ -174,6 +197,11 @@ d3.csv("data/data.csv", function(error, csv) {
     // Reset chart to original scale on button click
     chart.select(".reset")
       .on("click", function() {
+          // Hide reset button.
+          d3.select(".reset")
+            .style("display", "none");
+
+          // Remove lines and labels.
           removeLines();
           removeLabels();
 
@@ -255,7 +283,7 @@ function removeLines () {
 
 // Removes labels.
 function removeLabels () {
-  svg.selectAll(".label").remove();
+  svg.selectAll(".labels").remove();
 }
 
 // Draws path across dimensions.
@@ -275,5 +303,5 @@ function path(d) {
 
 // Returns number of axis ticks based on chart width.
 function tickNumber(width) {
-  return width > 600 ? 6 : 2;
+  return width > 500 ? 6 : 2;
 }
