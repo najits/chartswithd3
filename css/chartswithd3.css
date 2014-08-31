@@ -1,5 +1,5 @@
 #chart {
-  width: 75%;
+  width: 85%;
   height: 70%;
   position: absolute;
   font: 15px Arial;
@@ -24,6 +24,7 @@
   font: 14px Arial;
 }
 
+text.legendLabel,
 text.nameLabel,
 text.valueLabel {
   font: 14px Arial;

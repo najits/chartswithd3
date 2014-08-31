@@ -3,21 +3,19 @@ var chart = d3.select("#chart");
 var outerWidth = parseInt(chart.style("width")),
     outerHeight = parseInt(chart.style("height")),
     margin = {top: 20, right: 10, bottom: 20, left: 10},
-    padding = {left: 120, right: 100},
+    padding = {left: 120, right: 250},
     width = outerWidth - margin.left - margin.right - padding.left - padding.right,
     height = outerHeight - margin.top - margin.bottom;
 
 var x = {}, origExtent = {},
+    // minX = {}, maxX = {}, tickValuesX = {},
     y = d3.scale.ordinal().rangePoints([0, height], 1);
 
 var line = d3.svg.line(),
-    axis = d3.svg.axis().ticks(tickNumber(width)).outerTickSize(0);
+    axis = d3.svg.axis().outerTickSize(0).ticks(tickNumber(width));
 
 var radiusNormal = 8,
     radiusLarge = 12;
-
-var pValue, centerVal,
-    minMax = [], distFromCenter = [], maxDistFromCenter;
 
 var svg = chart.append("svg")
             .attr("class", "container")
@@ -33,61 +31,80 @@ d3.csv("data/data.csv", function(error, csv) {
     return p != "Portfolio"
   }));
 
+  // minRow = csv.filter(function(d) {
+  //   return d.Portfolio === "__MIN";
+  // });
+
+  // maxRow = csv.filter(function(d) {
+  //   return d.Portfolio === "__MAX";
+  // });
+
   // Create a scale for each dimension.
   dimensions.map(function(p) {
     origExtent[p] = d3.extent(csv, function(d) { return +d[p]; });
     // x[p] = (p === "Total Risk") ? d3.scale.pow().exponent(2) : d3.scale.linear();
     // x[p].domain(origExtent[p]).range([0, width]);
     x[p] = d3.scale.linear().domain(origExtent[p]).range([0, width]);
+    // minX[p] = minRow.map(function(d) { return +d[p]; })[0];
+    // maxX[p] = maxRow.map(function(d) { return +d[p]; })[0];
   });
 
-  // Ignore __MIN and __MAX rows in data.
+  // Create tickValues array for each dimension.
+  // dimensions.map(function(p) {
+  //   tickValuesX[p] = [];
+  //   inc = (maxX[p] - minX[p]) / 5;
+  //   for (var i = 0; i <= 5; i++) {
+  //     tickValuesX[p][i] = minX[p] + (i * inc);
+  //   };
+  //   console.log(tickValuesX[p]);
+  // });
+
+  // Create data ignoring __MIN and __MAX rows.
   data = csv.filter(function(d) {
-    return d.Portfolio != "__MIN" && d.Portfolio != "__MAX";
+    return d.Portfolio != "__MIN" && d.Portfolio != "__MAX" && d.Portfolio != "__FLOOR";
   });
 
   // Create portfolio color palette.
-  var color = d3.scale.ordinal()
-                .domain(data.map(function(d) { return d.Portfolio; }))
-                .range(["#55BE65", "#269DD6", "#7E408A", "#D35158", "#F09C26"]);
+  color = d3.scale.ordinal()
+            .domain(data.map(function(d) { return d.Portfolio; }))
+            .range(["#55BE65", "#269DD6", "#7E408A", "#D35158", "#F09C26"]);
 
   // Add a group element for each dimension.
-  var g = svg.selectAll(".dimension")
-            .data(dimensions)
-          .enter().append("g")
-            .attr("class", "dimension")
-            .attr("transform", function(p) { return "translate( " + padding.left + ", " + y(p) + ")"; });
+  g = svg.selectAll(".dimension")
+        .data(dimensions)
+      .enter().append("g")
+        .attr("class", "dimension")
+        .attr("transform", function(p) {
+          return "translate( " + padding.left + ", " + y(p) + ")";
+        });
 
-  // Add an axis and title.
+  // Add an axis.
   g.append("g")
     .attr("class", "axis")
     .each(function(p) {
         d3.select(this)
           .transition().duration(1750)
             .call(axis.scale(x[p]));
-          })
-    .append("text")
+          });
+
+  // Add a title.
+  g.each(function(p) {
+    d3.select(this).append("text")
       .style("text-anchor", "end")
       .attr("x", -10)
       .attr("y", 5)
-      .text(function(p) { return p; });
-
-  // Add and hide reset button.
-  chart.append("input")
-    .attr("type","button")
-    .attr("value", "Reset")
-    .attr("class", "reset")
-    .style("display", "none");
+      .text(function(p) { return p; })
+    });
 
   // Add and animate circles on each dimension.
   g.each(function(p) {
-    d3.select(this).selectAll(".circles")
+    d3.select(this).selectAll(".circle")
       .data(data)
     .enter().append("circle")
-      .attr("class", "circles")
+      .attr("class", "circle")
       .attr("r", radiusNormal)
       .style("fill", function(d) { return color(d.Portfolio); })
-      .style("stroke-width", 0.5)
+      .style("stroke-width", 1)
       //animated items
       .attr("cx", -250)
       .style("fill-opacity", 0.3)
@@ -98,55 +115,100 @@ d3.csv("data/data.csv", function(error, csv) {
           .duration(1750)
         .attr("cx", function(d) { return x[p](d[p]); })
         .style("fill-opacity", 0.7)
-        .style("stroke", "#333333")
         .each("end", function() {
-          d3.select(this)
-            .style("pointer-events", null);
+          d3.select(this).style("pointer-events", null);
         });
   });
 
-  // Add listeners to circles
-  svg.selectAll(".circles")
+  // Add and hide reset button.
+  chart.append("input")
+    .attr("type","button")
+    .attr("value", "Reset")
+    .attr("class", "reset")
+    .style("display", "none");
+
+  // Add legend.
+  legend = svg.append("g")
+            .attr("class","legend")
+            .attr("transform","translate ( " + (width + padding.left + 50) + ", " + (height / 2 - 40) + ")");
+
+  legend.selectAll(".legendItems")
+    .data(data).enter()
+    .append("g")
+      .attr("class","legendItems");
+
+  legend.selectAll(".legendItems")
+    .append("circle")
+      .attr("class","legendCircle")
+      .attr("r", radiusNormal)
+      .style("fill", function(d) { return color(d.Portfolio); })
+      //animated items
+      .style("stroke-width", 0)
+      .style("fill-opacity", 0)
+      .style("stroke", function(d) { return color(d.Portfolio); })
+      .style("pointer-events", "none")
+        .transition()
+          .duration(3500)
+        .style("stroke-width", 1)
+        .style("fill-opacity", 0.7)
+        .attr("cy", function(d, i) { return 22 * i; })
+        .each("end", function() {
+          d3.select(this).style("pointer-events", null);
+        });
+
+  legend.selectAll(".legendItems")
+    .append("text")
+      .attr("class","legendLabel")
+      .text(function(d) { return d.Portfolio; })
+      .attr("y", function(d, i) { return 22 * i; })
+      .attr("x", 12)
+      .attr("dy", "0.35em")
+      .attr("fill-opacity", 0.05)
+      .style("pointer-events", "none")
+      .transition()
+          .duration(3500)
+        .attr("fill-opacity", 1)
+        .each("end", function() {
+          d3.select(this).style("pointer-events", null);
+        });
+
+  // Add listeners to circles.
+  svg.selectAll(".circle")
     // Generate path and label on mouseover and circle radius enlarge effect.
     .on("mouseover", function(d) {
         // Animate circle radius.
         d3.select(this)
-          .attr("r", radiusLarge);
+          .attr("r", radiusLarge)
+          .attr("cursor", "pointer");
+
+        // Animate legend.
+        legend.selectAll(".legendItems")
+          .filter(function(p) { return p.Portfolio === d.Portfolio; })
+            .each(function(p) {
+              d3.select(this).select(".legendCircle").attr("r", radiusLarge);
+              d3.select(this).select(".legendLabel").style("font-weight", 600);
+            });
 
         // Add data series labels.
-        d3.select(this.parentNode)
-          .each(function(p) { pValue = p; });
-        xTransform = parseFloat(d3.select(this).attr("cx")) - 5;
-
-        labels = d3.select(this.parentNode)
-                  .append("g")
-                  .attr("class", "labels")
-                  .attr("transform", "translate( " + xTransform + ", 0)")
-                  .style("text-anchor", "start");
-
-        labels.append("text")
-            .attr("class", "nameLabel")
-            .text(d.Portfolio)
-            .attr("y", -30);
-
-        labels.append("text")
-            .attr("class", "valueLabel")
-            .text(pValue + ": " + d[pValue])
-            .attr("y", -15);
+        addLabel(d3.select(this));
 
         // Add path connecting data series across dimensions.
         drawLine(d, color);
       })
     // Remove path and label on mouseout and change circle radius back to normal.
     .on("mouseout", function() {
-        // Animate circle radius and turn pointer-events back on.
+        // Unanimate circle radius and turn pointer-events back on.
         d3.select(this)
           .transition()
             .attr("r", radiusNormal)
             .each("end", function() {
-              d3.select(this)
-                .style("pointer-events", null);
+              d3.select(this).style("pointer-events", null);
             });
+
+        // Unanimate legend.
+        legend.selectAll(".legendCircle").attr("r", radiusNormal);
+        legend.selectAll(".legendLabel").style("font-weight", "normal");
+
         // Remove lines and labels.
         removeLines();
         removeLabels();
@@ -175,17 +237,14 @@ d3.csv("data/data.csv", function(error, csv) {
         });
 
         // Transition clicked circle instantenously to void conflicts with mouseover/mouseout.
-        d3.select(this.parentNode)
-          .each(function(p) { pValue = p; });
-        d3.select(this)
-          .attr("cx", function(d) { return x[pValue](d[pValue]); });
+        d3.select(this.parentNode).each(function(p) { pValue = p; });
+        d3.select(this).attr("cx", function(d) { return x[pValue](d[pValue]); });
 
         // Re-draw and animate x axes and circles using new domains.
         reScale(g);
 
         // Display reset button.
-        d3.select(".reset")
-          .style("display", null);
+        d3.select(".reset").style("display", null);
 
         // setTimeout(function() { drawLine(d, color) }, 750);
         // d3.select(".line").select("path")
@@ -194,30 +253,75 @@ d3.csv("data/data.csv", function(error, csv) {
         //     .attr("d", path(d));
     });
 
-    // Reset chart to original scale on button click
-    chart.select(".reset")
-      .on("click", function() {
-          // Hide reset button.
-          d3.select(".reset")
-            .style("display", "none");
+  // Add listeners to legend.
+  svg.selectAll(".legendItems")
+    .on("mouseover", function(p) {
+        d3.select(this).attr("cursor", "pointer");
+        d3.select(this).select(".legendCircle").attr("r", radiusLarge);
+        d3.select(this).select(".legendLabel").style("font-weight", 600);
 
-          // Remove lines and labels.
-          removeLines();
-          removeLabels();
+        svg.selectAll(".circle")
+          .filter(function(d) { return d.Portfolio === p.Portfolio; })
+            .attr("r", radiusLarge)
+            .each(function() { addLabel(d3.select(this)); });
 
-          // Reset x axis domain to original extent.
-          dimensions.map(function(p) {
-            x[p].domain(origExtent[p]);
-          });
+        drawLine(p, color);
+    })
+    .on("mouseout", function() {
+        d3.select(this).select(".legendCircle").attr("r", radiusNormal);
+        d3.select(this).select(".legendLabel").style("font-weight", "normal");
+        svg.selectAll(".circle").attr("r", radiusNormal);
+        removeLines();
+        removeLabels();
+    });
 
-          // Re-draw and animate x axes and circles using new domains.
-          reScale(g);
-      });
+  // Reset chart to original scale on button click
+  chart.select(".reset")
+    .on("click", function() {
+        // Hide reset button.
+        d3.select(".reset").style("display", "none");
+
+        // Remove lines and labels.
+        removeLines();
+        removeLabels();
+
+        // Reset x axis domain to original extent.
+        dimensions.map(function(p) {
+          x[p].domain(origExtent[p]);
+        });
+
+        // Re-draw and animate x axes and circles using new domains.
+        reScale(g);
+    });
 
   // Resize chart on window resize.
   d3.select(window)
-    .on('resize', reSize);
+    .on("resize", reSize);
 });
+
+// Adds data series labels.
+function addLabel (circle) {
+  circle.each(function(d) {
+      d3.select(this.parentNode).each(function(p) { pValue = p; });
+      xTransform = parseFloat(d3.select(this).attr("cx")) - 5;
+
+      labels = d3.select(this.parentNode)
+                .append("g")
+                .attr("class", "labels")
+                .attr("transform", "translate( " + xTransform + ", 0)")
+                .style("text-anchor", "start");
+
+      labels.append("text")
+          .attr("class", "nameLabel")
+          .text(d.Portfolio)
+          .attr("y", -30);
+
+      labels.append("text")
+          .attr("class", "valueLabel")
+          .text(pValue + ": " + d[pValue])
+          .attr("y", -15);
+  });
+}
 
 // Resizes chart.
 function reSize() {
@@ -238,7 +342,9 @@ function reSize() {
 
   // Update y spacing for axes.
   svg.selectAll(".dimension")
-    .attr("transform", function(p) { return "translate( " + padding.left + ", " + y(p) + ")"; });
+    .attr("transform", function(p) {
+      return "translate( " + padding.left + ", " + y(p) + ")";
+    });
 
   // Update number of ticks displayed.
   axis.ticks(tickNumber(width));
@@ -249,9 +355,14 @@ function reSize() {
 
   // Update x values for circles.
   svg.selectAll(".dimension").each(function(p) {
-    d3.select(this).selectAll(".circles")
+    d3.select(this).selectAll(".circle")
       .attr("cx", function(d) { return x[p](d[p]); });
   });
+
+  // Update legend location.
+  svg.select(".legend")
+    .attr("display", null)
+    .attr("transform", "translate ( " + (width + padding.left + 50) + ", " + (height / 2 - 40) + ")");
 }
 
 // Redraws axes and circles.
@@ -261,7 +372,7 @@ function reScale (g) {
       .transition().duration(750)
         .call(axis.scale(x[p]));
 
-    d3.select(this).selectAll(".circles")
+    d3.select(this).selectAll(".circle")
       .transition()
         .duration(750)
         .each("start", function() {
