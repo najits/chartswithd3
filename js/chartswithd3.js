@@ -17,6 +17,11 @@ var line = d3.svg.line(),
 var radiusNormal = 8,
     radiusLarge = 12;
 
+var transitionDuration = 1750,
+    transitionDurationShort = 750,
+    transitionDurationLong = 3000,
+    transitionDelay = 300;
+
 var svg = chart.append("svg")
             .attr("class", "container")
             .attr("width", outerWidth)
@@ -83,7 +88,7 @@ d3.csv("data/data.csv", function(error, csv) {
     .attr("class", "axis")
     .each(function(p) {
         d3.select(this)
-          .transition().duration(1750)
+          .transition().duration(transitionDuration)
             .call(axis.scale(x[p]));
           });
 
@@ -111,8 +116,8 @@ d3.csv("data/data.csv", function(error, csv) {
       .style("stroke", function(d) { return color(d.Portfolio); })
       .style("pointer-events", "none")
         .transition()
-          .delay(function(d, i) { return i * 300; })
-          .duration(1750)
+          .delay(function(d, i) { return i * transitionDelay; })
+          .duration(transitionDuration)
         .attr("cx", function(d) { return x[p](d[p]); })
         .style("fill-opacity", 0.7)
         .each("end", function() {
@@ -148,7 +153,7 @@ d3.csv("data/data.csv", function(error, csv) {
       .style("stroke", function(d) { return color(d.Portfolio); })
       .style("pointer-events", "none")
         .transition()
-          .duration(3500)
+          .duration(transitionDurationLong)
         .style("stroke-width", 1)
         .style("fill-opacity", 0.7)
         .attr("cy", function(d, i) { return 22 * i; })
@@ -163,10 +168,10 @@ d3.csv("data/data.csv", function(error, csv) {
       .attr("y", function(d, i) { return 22 * i; })
       .attr("x", 12)
       .attr("dy", "0.35em")
-      .attr("fill-opacity", 0.05)
+      .attr("fill-opacity", 0)
       .style("pointer-events", "none")
       .transition()
-          .duration(3500)
+          .duration(transitionDurationLong)
         .attr("fill-opacity", 1)
         .each("end", function() {
           d3.select(this).style("pointer-events", null);
@@ -174,12 +179,12 @@ d3.csv("data/data.csv", function(error, csv) {
 
   // Add listeners to circles.
   svg.selectAll(".circle")
-    // Generate path and label on mouseover and circle radius enlarge effect.
     .on("mouseover", function(d) {
-        // Animate circle radius.
+        // Animate circle radius, change cursor, and add data label.
         d3.select(this)
           .attr("r", radiusLarge)
-          .attr("cursor", "pointer");
+          .attr("cursor", "pointer")
+          .call(addLabel);
 
         // Animate legend.
         legend.selectAll(".legendItems")
@@ -189,21 +194,18 @@ d3.csv("data/data.csv", function(error, csv) {
               d3.select(this).select(".legendLabel").style("font-weight", 600);
             });
 
-        // Add data series labels.
-        addLabel(d3.select(this));
-
-        // Add path connecting data series across dimensions.
+        // Add line.
         drawLine(d, color);
       })
-    // Remove path and label on mouseout and change circle radius back to normal.
     .on("mouseout", function() {
         // Unanimate circle radius and turn pointer-events back on.
         d3.select(this)
           .transition()
             .attr("r", radiusNormal)
+            // Workaround to avoid listener and transition conflicts (keep!).
             .each("end", function() {
-              d3.select(this).style("pointer-events", null);
-            });
+                d3.select(this).style("pointer-events", null);
+              });
 
         // Unanimate legend.
         legend.selectAll(".legendCircle").attr("r", radiusNormal);
@@ -213,69 +215,82 @@ d3.csv("data/data.csv", function(error, csv) {
         removeLines();
         removeLabels();
       })
-    // Re-scale axes on click, centering all axes on data value of clicked item.
     .on("click", function(d) {
-        // Same as mouseout.
-        d3.select(this)
-          .transition()
-            .attr("r", radiusNormal)
-            .each("end", function() {
-              d3.select(this)
-                .style("pointer-events", null);
-            });
+        // Update line class in order to retain.
+        setCenterLine();
+
+        // Remove labels.
         removeLabels();
-        removeLines();
 
         // Recompute x axis domains, centering on data value of clicked circle.
-        dimensions.map(function(p) {
-            centerVal = +d[p];
-            x[p].domain(origExtent[p]);
-            minMax = x[p].domain();
-            distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
-            maxDistFromCenter = d3.max(distFromCenter);
-            x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
-        });
+        recenterDomains(d);
 
-        // Transition clicked circle instantenously to void conflicts with mouseover/mouseout.
+        // Transition clicked circle instantenously to void conflicts with listeners.
         d3.select(this.parentNode).each(function(p) { pValue = p; });
         d3.select(this).attr("cx", function(d) { return x[pValue](d[pValue]); });
 
         // Re-draw and animate x axes and circles using new domains.
         reScale(g);
 
+        // Animate lines.
+        centerLine(d);
+
         // Display reset button.
         d3.select(".reset").style("display", null);
-
-        // setTimeout(function() { drawLine(d, color) }, 750);
-        // d3.select(".line").select("path")
-        //   .transition()
-        //     .duration(750)
-        //     .attr("d", path(d));
     });
 
   // Add listeners to legend.
   svg.selectAll(".legendItems")
     .on("mouseover", function(p) {
-        d3.select(this).attr("cursor", "pointer");
+        // Animate legend.
         d3.select(this).select(".legendCircle").attr("r", radiusLarge);
         d3.select(this).select(".legendLabel").style("font-weight", 600);
 
+        // Animate circles for matching portfolio and add labels.
         svg.selectAll(".circle")
           .filter(function(d) { return d.Portfolio === p.Portfolio; })
             .attr("r", radiusLarge)
-            .each(function() { addLabel(d3.select(this)); });
+            .call(addLabel);
 
+        // Change cursor.
+        d3.select(this).attr("cursor", "pointer");
+
+        // Add line.
         drawLine(p, color);
     })
     .on("mouseout", function() {
+        // Unanimate legend.
         d3.select(this).select(".legendCircle").attr("r", radiusNormal);
         d3.select(this).select(".legendLabel").style("font-weight", "normal");
+
+        // Unanimate circles.
         svg.selectAll(".circle").attr("r", radiusNormal);
-        removeLines();
+
+        // Remove labels and lines.
         removeLabels();
+        removeLines();
+    })
+    .on("click", function(d) {
+        // Update line class in order to retain.
+        setCenterLine();
+
+        // Remove labels.
+        removeLabels();
+
+        // Recompute x axis domains, centering on data value of clicked circle.
+        recenterDomains(d);
+
+        // Re-draw and animate x axes and circles using new domains.
+        reScale(g);
+
+        // Animate lines.
+        centerLine(d);
+
+        // Display reset button.
+        d3.select(".reset").style("display", null);
     });
 
-  // Reset chart to original scale on button click
+  // Reset chart to original scale on button click.
   chart.select(".reset")
     .on("click", function() {
         // Hide reset button.
@@ -283,6 +298,7 @@ d3.csv("data/data.csv", function(error, csv) {
 
         // Remove lines and labels.
         removeLines();
+        d3.select(".line.centered").remove();
         removeLabels();
 
         // Reset x axis domain to original extent.
@@ -299,8 +315,34 @@ d3.csv("data/data.csv", function(error, csv) {
     .on("resize", reSize);
 });
 
+// Recompute doamins, centering on passed data.
+function recenterDomains(d) {
+  dimensions.map(function(p) {
+      centerVal = +d[p];
+      x[p].domain(origExtent[p]);
+      minMax = x[p].domain();
+      distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
+      maxDistFromCenter = d3.max(distFromCenter);
+      x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
+  });
+}
+
+// Centers line.
+function centerLine(d) {
+  d3.select(".line.centered").select("path")
+    .transition()
+      .duration(transitionDurationShort)
+      .attr("d", path(d));
+}
+
+// Sets center line class.
+function setCenterLine() {
+  d3.select(".line.centered").remove();
+  d3.select(".line").attr("class", "line centered");
+}
+
 // Adds data series labels.
-function addLabel (circle) {
+function addLabel(circle) {
   circle.each(function(d) {
       d3.select(this.parentNode).each(function(p) { pValue = p; });
       xTransform = parseFloat(d3.select(this).attr("cx")) - 5;
@@ -359,6 +401,8 @@ function reSize() {
       .attr("cx", function(d) { return x[p](d[p]); });
   });
 
+  d3.select(".line.centered").remove();
+
   // Update legend location.
   svg.select(".legend")
     .attr("display", null)
@@ -366,34 +410,34 @@ function reSize() {
 }
 
 // Redraws axes and circles.
-function reScale (g) {
+function reScale(g) {
   g.each(function(p) {
     d3.select(this).selectAll(".axis")
-      .transition().duration(750)
+      .transition().duration(transitionDurationShort)
         .call(axis.scale(x[p]));
 
     d3.select(this).selectAll(".circle")
       .transition()
-        .duration(750)
+        .duration(transitionDurationShort)
         .each("start", function() {
-          d3.select(this)
-            .style("pointer-events", "none");
+          d3.select(this).style("pointer-events", "none");
         })
         .attr("cx", function(d) { return x[p](d[p]); })
         .each("end", function() {
-          d3.select(this)
-            .style("pointer-events", null);
+          d3.select(this).style("pointer-events", null);
         });
   });
 }
 
 // Removes lines.
-function removeLines () {
-  svg.selectAll(".line").remove();
+function removeLines() {
+  svg.selectAll(".line")
+    .filter(function() { return d3.select(this).attr("class") != "line centered"; })
+    .remove();
 }
 
 // Removes labels.
-function removeLabels () {
+function removeLabels() {
   svg.selectAll(".labels").remove();
 }
 
