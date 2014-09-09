@@ -28,13 +28,9 @@
   text-anchor: end;
 }
 
-.circle {
+.circle, .legendItems {
   cursor: pointer;
-  stroke-width: 1;
-}
-
-.legendItems {
-  cursor: pointer;
+  stroke-width: 0.8;
 }
 
 text.legendLabel,

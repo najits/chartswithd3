@@ -14,13 +14,8 @@ var x = {}, origExtent = {},
 var line = d3.svg.line(),
     axis = d3.svg.axis().outerTickSize(0).ticks(tickNumber(width));
 
-var radiusNormal = 8,
-    radiusLarge = 12;
-
-var transitionDuration = 1750,
-    transitionDurationShort = 750,
-    transitionDurationLong = 3000,
-    transitionDelay = 300;
+var radius = {normal: 8, large: 12},
+    transition = {duration: 1750, durationShort: 750, durationLong: 3000, delay: 300};
 
 var svg = chart.append("svg")
             .attr("class", "container")
@@ -87,10 +82,11 @@ d3.csv("data/data.csv", function(error, csv) {
   g.append("g")
     .attr("class", "axis")
     .each(function(p) {
-        d3.select(this)
-          .transition().duration(transitionDuration)
-            .call(axis.scale(x[p]));
-          });
+      d3.select(this)
+        .transition()
+          .duration(transition.duration)
+        .call(axis.scale(x[p]));
+    });
 
   // Add a title.
   g.each(function(p) {
@@ -106,18 +102,20 @@ d3.csv("data/data.csv", function(error, csv) {
       .data(data)
     .enter().append("circle")
       .attr("class", "circle")
-      .attr("r", radiusNormal)
-      .style("fill", function(d) { return color(d.Portfolio); })
+      .attr("r", radius.normal)
       //animated items
-      .attr("cx", -250)
-      .style("fill-opacity", 0.3)
-      .style("stroke", function(d) { return color(d.Portfolio); })
+      .attr("cx", 0)
+      .style({"fill": "#EBEBEB",
+             "fill-opacity": 0.3,
+             "stroke": "#EBEBEB"})
       .style("pointer-events", "none")
         .transition()
-          .delay(function(d, i) { return i * transitionDelay; })
-          .duration(transitionDuration)
+          .delay(function(d, i) { return i * transition.delay; })
+          .duration(transition.duration)
         .attr("cx", function(d) { return x[p](d[p]); })
+        .style("fill", function(d) { return color(d.Portfolio); })
         .style("fill-opacity", 0.7)
+        .style("stroke", function(d) { return color(d.Portfolio); })
         .each("end", function() {
           d3.select(this).style("pointer-events", null);
         });
@@ -136,18 +134,18 @@ d3.csv("data/data.csv", function(error, csv) {
   legend.selectAll(".legendItems")
     .append("circle")
       .attr("class","legendCircle")
-      .attr("r", radiusNormal)
-      .style("fill", function(d) { return color(d.Portfolio); })
-      .style("stroke", function(d) { return color(d.Portfolio); })
+      .attr("r", radius.normal)
+      .attr("cy", function(d, i) { return 22 * i; })
       //animated items
-      .style("stroke-width", 0)
-      .style("fill-opacity", 0)
+      .style({"fill": "#EBEBEB",
+             "fill-opacity": 0.3,
+             "stroke": "#EBEBEB"})
       .style("pointer-events", "none")
         .transition()
-          .duration(transitionDurationLong)
-        .style("stroke-width", 1)
+          .duration(transition.durationLong)
+        .style("fill", function(d) { return color(d.Portfolio); })
         .style("fill-opacity", 0.7)
-        .attr("cy", function(d, i) { return 22 * i; })
+        .style("stroke", function(d) { return color(d.Portfolio); })
         .each("end", function() {
           d3.select(this).style("pointer-events", null);
         });
@@ -159,11 +157,9 @@ d3.csv("data/data.csv", function(error, csv) {
       .attr("y", function(d, i) { return 22 * i; })
       .attr("x", 12)
       .attr("dy", "0.35em")
-      .attr("fill-opacity", 0)
       .style("pointer-events", "none")
-      .transition()
-          .duration(transitionDurationLong)
-        .attr("fill-opacity", 1)
+        .transition()
+          .duration(transition.durationLong)
         .each("end", function() {
           d3.select(this).style("pointer-events", null);
         });
@@ -180,14 +176,14 @@ d3.csv("data/data.csv", function(error, csv) {
     .on("mouseover", function(d) {
         // Animate circle radius and add data label.
         d3.select(this)
-          .attr("r", radiusLarge)
+          .attr("r", radius.large)
           .call(addLabel);
 
-        // Animate legend.
+        // Highlight legend.
         legend.selectAll(".legendItems")
           .filter(function(p) { return p.Portfolio === d.Portfolio; })
             .each(function(p) {
-              d3.select(this).select(".legendCircle").attr("r", radiusLarge);
+              d3.select(this).select(".legendCircle").attr("r", radius.large);
               d3.select(this).select(".legendLabel").style("font-weight", "bold");
             });
 
@@ -197,12 +193,11 @@ d3.csv("data/data.csv", function(error, csv) {
     .on("mouseout", function() {
         // Unanimate circle radius and remove label.
         d3.select(this)
-          // .style("pointer-events", null) // Workaround to avoid listener and transition conflicts (keep!).
-          .attr("r", radiusNormal)
+          .attr("r", radius.normal)
           .call(removeLabels);
 
-        // Unanimate legend.
-        legend.selectAll(".legendCircle").attr("r", radiusNormal);
+        // Unhighlight legend.
+        legend.selectAll(".legendCircle").attr("r", radius.normal);
         legend.selectAll(".legendLabel").style("font-weight", "normal");
 
         // Remove lines.
@@ -235,26 +230,26 @@ d3.csv("data/data.csv", function(error, csv) {
   // Add listeners to legend.
   svg.selectAll(".legendItems")
     .on("mouseover", function(p) {
-        // Animate legend.
-        d3.select(this).select(".legendCircle").attr("r", radiusLarge);
+        // Highlight legend.
+        d3.select(this).select(".legendCircle").attr("r", radius.large);
         d3.select(this).select(".legendLabel").style("font-weight", "bold");
 
         // Animate circles for matching portfolio and add labels.
         svg.selectAll(".circle")
           .filter(function(d) { return d.Portfolio === p.Portfolio; })
-            .attr("r", radiusLarge)
+            .attr("r", radius.large)
             .call(addLabel);
 
         // Add line.
         drawLine(p, color);
     })
     .on("mouseout", function() {
-        // Unanimate legend.
-        d3.select(this).select(".legendCircle").attr("r", radiusNormal);
+        // Unhighlight legend.
+        d3.select(this).select(".legendCircle").attr("r", radius.normal);
         d3.select(this).select(".legendLabel").style("font-weight", "normal");
 
         // Unanimate circles.
-        svg.selectAll(".circle").attr("r", radiusNormal);
+        svg.selectAll(".circle").attr("r", radius.normal);
 
         // Remove labels and lines.
         removeLabels();
@@ -321,8 +316,8 @@ function recenterDomains(d) {
 function centerLine(d) {
   d3.select(".line.centered").select("path")
     .transition()
-      .duration(transitionDurationShort)
-      .attr("d", path(d));
+      .duration(transition.durationShort)
+    .attr("d", path(d));
 }
 
 // Sets center line class.
@@ -404,20 +399,18 @@ function reSize() {
 function reScale(g) {
   g.each(function(p) {
     d3.select(this).selectAll(".axis")
-      .transition().duration(transitionDurationShort)
-        .call(axis.scale(x[p]));
+      .transition()
+        .duration(transition.durationShort)
+      .call(axis.scale(x[p]));
 
     d3.select(this).selectAll(".circle")
       .style("pointer-events", "none")
-      .transition()
-          .duration(transitionDurationShort)
-      // .each("start", function() {
-      //   d3.select(this).style("pointer-events", "none");
-      // })
-      .attr("cx", function(d) { return x[p](d[p]); })
-      .each("end", function() {
-        d3.select(this).style("pointer-events", null);
-      });
+        .transition()
+          .duration(transition.durationShort)
+        .attr("cx", function(d) { return x[p](d[p]); })
+        .each("end", function() {
+          d3.select(this).style("pointer-events", null);
+        });
   });
 }
 
