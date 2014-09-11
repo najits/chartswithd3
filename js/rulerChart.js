@@ -15,7 +15,7 @@ var line = d3.svg.line(),
     axis = d3.svg.axis().outerTickSize(0).ticks(tickNumber(width));
 
 var radius = {normal: 8, large: 12},
-    transition = {duration: 1750, durationShort: 750, durationLong: 3000, delay: 300};
+    transition = {duration: 1750, durationShort: 750, delay: 300};
 
 var svg = chart.append("svg")
             .attr("class", "container")
@@ -142,7 +142,8 @@ d3.csv("data/data.csv", function(error, csv) {
              "stroke": "#EBEBEB"})
       .style("pointer-events", "none")
         .transition()
-          .duration(transition.durationLong)
+          .delay(function(d, i) { return i * transition.delay; })
+          .duration(transition.duration)
         .style("fill", function(d) { return color(d.Portfolio); })
         .style("fill-opacity", 0.7)
         .style("stroke", function(d) { return color(d.Portfolio); })
@@ -157,9 +158,12 @@ d3.csv("data/data.csv", function(error, csv) {
       .attr("y", function(d, i) { return 22 * i; })
       .attr("x", 12)
       .attr("dy", "0.35em")
-      .style("pointer-events", "none")
+      .style({"pointer-events": "none",
+              "fill-opacity": 0.0})
         .transition()
-          .duration(transition.durationLong)
+          .delay(function(d, i) { return i * transition.delay; })
+          .duration(transition.duration)
+        .style("fill-opacity", 1.0)
         .each("end", function() {
           d3.select(this).style("pointer-events", null);
         });
