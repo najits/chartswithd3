@@ -24,7 +24,7 @@ var svg = chart.append("svg")
           .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.csv("data/data.csv", function(error, csv) {
+d3.csv("data/data2nd.csv", function(error, csv) {
 
   // Extract the list of dimensions.
   y.domain(dimensions = d3.keys(csv[0]).filter(function(p) {
