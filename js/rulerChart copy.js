@@ -3,12 +3,11 @@ var chart = d3.select("#chart");
 var outerWidth = parseInt(chart.style("width")),
     outerHeight = parseInt(chart.style("height")),
     margin = {top: 20, right: 10, bottom: 20, left: 10},
-    padding = {left: 120, right: 250},
+    padding = {left: 120, right: 270},
     width = outerWidth - margin.left - margin.right - padding.left - padding.right,
     height = outerHeight - margin.top - margin.bottom;
 
-var x = {}, origExtent = {},
-    // minX = {}, maxX = {}, tickValuesX = {},
+var x = {}, origExtent = {}, floor = {}, floorXpx = {},
     y = d3.scale.ordinal().rangePoints([0, height], 1);
 
 var line = d3.svg.line(),
@@ -17,6 +16,9 @@ var line = d3.svg.line(),
 var radius = {normal: 8, large: 12},
     transition = {duration: 1750, durationShort: 750, delay: 300};
 
+var color = d3.scale.ordinal()
+            .range(["#55BE65", "#269DD6", "#7E408A", "#D35158", "#F09C26"]);
+
 var svg = chart.append("svg")
             .attr("class", "container")
             .attr("width", outerWidth)
@@ -24,50 +26,35 @@ var svg = chart.append("svg")
           .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.csv("data/data2nd.csv", function(error, csv) {
+d3.csv("data/data.csv", function(error, csv) {
 
   // Extract the list of dimensions.
   y.domain(dimensions = d3.keys(csv[0]).filter(function(p) {
-    return p != "Portfolio"
+    return p != "Portfolio";
   }));
 
-  // minRow = csv.filter(function(d) {
-  //   return d.Portfolio === "__MIN";
-  // });
-
-  // maxRow = csv.filter(function(d) {
-  //   return d.Portfolio === "__MAX";
-  // });
-
-  // Create a scale for each dimension.
-  dimensions.map(function(p) {
-    origExtent[p] = d3.extent(csv, function(d) { return +d[p]; });
-    // x[p] = (p === "Total Risk") ? d3.scale.pow().exponent(2) : d3.scale.linear();
-    // x[p].domain(origExtent[p]).range([0, width]);
-    x[p] = d3.scale.linear().domain(origExtent[p]).range([0, width]);
-    // minX[p] = minRow.map(function(d) { return +d[p]; })[0];
-    // maxX[p] = maxRow.map(function(d) { return +d[p]; })[0];
+  // Extract the row specifying floors.
+  floorRow = csv.filter(function(d) {
+    return d.Portfolio === "__FLOOR";
   });
 
-  // Create tickValues array for each dimension.
-  // dimensions.map(function(p) {
-  //   tickValuesX[p] = [];
-  //   inc = (maxX[p] - minX[p]) / 5;
-  //   for (var i = 0; i <= 5; i++) {
-  //     tickValuesX[p][i] = minX[p] + (i * inc);
-  //   };
-  //   console.log(tickValuesX[p]);
-  // });
+  // Create a scale and record floor for each dimension.
+  dimensions.map(function(p) {
+    floor[p] = floorRow.map(function(d) { return +d[p]; })[0];
+    floorXpx[p] = 0;
 
-  // Create data ignoring __MIN and __MAX rows.
+    origExtent[p] = d3.extent(csv, function(d) { return +d[p]; });
+    // x[p] = (p === "Total Risk") ? d3.scale.pow().exponent(2) : d3.scale.linear();
+    x[p] = d3.scale.linear().domain(origExtent[p]).range([floorXpx[p], width]);
+  });
+
+  // Create data.
   data = csv.filter(function(d) {
     return d.Portfolio != "__MIN" && d.Portfolio != "__MAX" && d.Portfolio != "__FLOOR";
   });
 
-  // Create portfolio color palette.
-  color = d3.scale.ordinal()
-            .domain(data.map(function(d) { return d.Portfolio; }))
-            .range(["#55BE65", "#269DD6", "#7E408A", "#D35158", "#F09C26"]);
+  // Create color palette.
+  color.domain(data.map(function(d) { return d.Portfolio; }));
 
   // Add a group element for each dimension.
   g = svg.selectAll(".dimension")
@@ -89,12 +76,11 @@ d3.csv("data/data2nd.csv", function(error, csv) {
     });
 
   // Add a title.
-  g.each(function(p) {
-    d3.select(this).append("text")
-      .attr("x", -10)
-      .attr("y", 5)
-      .text(function(p) { return p; })
-    });
+  g.append("text")
+    .attr("class", "axisLabel")
+    .attr("x", -10)
+    .attr("y", 5)
+    .text(function(p) { return p; });
 
   // Add and animate circles on each dimension.
   g.each(function(p) {
@@ -127,8 +113,8 @@ d3.csv("data/data2nd.csv", function(error, csv) {
             .attr("transform","translate ( " + (width + padding.left + 50) + ", " + (height / 2 - 40) + ")");
 
   legend.selectAll(".legendItems")
-    .data(data).enter()
-    .append("g")
+      .data(data)
+    .enter().append("g")
       .attr("class", "legendItems");
 
   legend.selectAll(".legendItems")
@@ -172,7 +158,7 @@ d3.csv("data/data2nd.csv", function(error, csv) {
   chart.append("input")
     .attr("type","button")
     .attr("value", "Reset")
-    .attr("class", "reset")
+    .attr("class", "reset btn btn-default btn-sm")
     .style("display", "none");
 
   // Add listeners to circles.
@@ -192,7 +178,7 @@ d3.csv("data/data2nd.csv", function(error, csv) {
             });
 
         // Add line.
-        drawLine(d, color);
+        drawLine(d);
       })
     .on("mouseout", function() {
         // Unanimate circle radius and remove label.
@@ -245,7 +231,7 @@ d3.csv("data/data2nd.csv", function(error, csv) {
             .call(addLabel);
 
         // Add line.
-        drawLine(p, color);
+        drawLine(p);
     })
     .on("mouseout", function() {
         // Unhighlight legend.
@@ -292,7 +278,9 @@ d3.csv("data/data2nd.csv", function(error, csv) {
 
         // Reset x axis domain to original extent.
         dimensions.map(function(p) {
-          x[p].domain(origExtent[p]);
+          floorXpx[p] = 0;
+          x[p].domain(origExtent[p])
+              .range([floorXpx[p], width]);
         });
 
         // Re-draw and animate x axes and circles using new domains.
@@ -307,12 +295,39 @@ d3.csv("data/data2nd.csv", function(error, csv) {
 // Recomputes domains, centering on passed data.
 function recenterDomains(d) {
   dimensions.map(function(p) {
+      floorXpx[p] = 0;
       centerVal = +d[p];
-      x[p].domain(origExtent[p]);
+      x[p].domain(origExtent[p])
+          .range([floorXpx[p], width]);
       minMax = x[p].domain();
       distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
       maxDistFromCenter = d3.max(distFromCenter);
       x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
+
+      if((centerVal - maxDistFromCenter) < floor[p]) {
+        floorXpx[p] = x[p](floor[p]);
+        x[p].domain([floor[p], centerVal + maxDistFromCenter])
+            .range([floorXpx[p], width]);
+      }
+  });
+}
+
+// Redraws axes and circles.
+function reScale(g) {
+  g.each(function(p) {
+    d3.select(this).selectAll(".axis")
+      .transition()
+        .duration(transition.durationShort)
+      .call(axis.scale(x[p]));
+
+    d3.select(this).selectAll(".circle")
+      .style("pointer-events", "none")
+        .transition()
+          .duration(transition.durationShort)
+        .attr("cx", function(d) { return x[p](d[p]); })
+        .each("end", function() {
+          d3.select(this).style("pointer-events", null);
+        });
   });
 }
 
@@ -369,7 +384,7 @@ function reSize() {
 
   // Update x and y ranges.
   y.rangePoints([0, height], 1);
-  dimensions.map(function(p) { x[p].range([0, width]); });
+  dimensions.map(function(p) { x[p].range([floorXpx[p], width]); });
 
   // Update y spacing for dimensions.
   svg.selectAll(".dimension")
@@ -399,25 +414,6 @@ function reSize() {
     .attr("transform", "translate ( " + (width + padding.left + 50) + ", " + (height / 2 - 40) + ")");
 }
 
-// Redraws axes and circles.
-function reScale(g) {
-  g.each(function(p) {
-    d3.select(this).selectAll(".axis")
-      .transition()
-        .duration(transition.durationShort)
-      .call(axis.scale(x[p]));
-
-    d3.select(this).selectAll(".circle")
-      .style("pointer-events", "none")
-        .transition()
-          .duration(transition.durationShort)
-        .attr("cx", function(d) { return x[p](d[p]); })
-        .each("end", function() {
-          d3.select(this).style("pointer-events", null);
-        });
-  });
-}
-
 // Removes lines.
 function removeLines() {
   svg.selectAll(".line")
@@ -431,7 +427,7 @@ function removeLabels() {
 }
 
 // Draws path across dimensions.
-function drawLine(d, color) {
+function drawLine(d) {
   svg.append("g")
     .attr("class", "line")
   .append("path")

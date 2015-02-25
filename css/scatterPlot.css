@@ -1,6 +1,6 @@
 #chart {
-  width: 100%;
-  height: 50%;
+  width: 80%;
+  height: 80%;
   position: absolute;
   font: 15px Arial;
   fill: #333333;
@@ -20,12 +20,13 @@
   shape-rendering: crispEdges;
 }
 
-.tick text {
+.label {
+  text-anchor: end;
   font: 14px Arial;
 }
 
-.dimension text {
-  text-anchor: end;
+.tick text {
+  font: 14px Arial;
 }
 
 .circle, .legendItems {
