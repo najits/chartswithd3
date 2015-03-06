@@ -1,3 +1,8 @@
+text {
+  font: 14px Arial;
+  fill: #555555;
+}
+
 .line path {
   fill: none;
   stroke-width: 2;
@@ -12,10 +17,6 @@
   shape-rendering: crispEdges;
 }
 
-.tick text {
-  font: 14px Arial;
-}
-
 .dimension text {
   text-anchor: end;
 }
@@ -26,19 +27,11 @@
   stroke-width: 0.8;
 }
 
-text.legendLabel,
-text.nameLabel,
-text.valueLabel {
-  font: 14px Arial;
-  fill: #777777;
+.labels text {
+  fill: #999999;
 }
 
-text.axisLabel {
-  font: 15px Arial;
-  fill: #333333;
-}
-
-.reset {
+.reset-btn {
   right: 20px;
   top: 10px;
   position: absolute;
