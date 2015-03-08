@@ -1,13 +1,29 @@
+svg {
+  stroke-width: 1.5;
+  stroke-opacity: 0.7;
+}
+
 text {
-  font: 14px Arial;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  fill: #777777;
+}
+
+.axisLabel {
+  text-anchor: end;
+}
+
+.dataLabels {
+  text-anchor: middle;
+}
+
+.activeText {
+  font-weight: bold;
   fill: #555555;
 }
 
-.line path {
+.line {
   fill: none;
-  stroke-width: 2;
-  stroke-opacity: 0.5;
-  pointer-events: none;
 }
 
 .axis line,
@@ -17,18 +33,9 @@ text {
   shape-rendering: crispEdges;
 }
 
-.dimension text {
-  text-anchor: end;
-}
-
 .circle,
 .legendItems {
-  cursor: pointer;
-  stroke-width: 0.8;
-}
-
-.labels text {
-  fill: #999999;
+  cursor: crosshair;
 }
 
 .reset-btn {
