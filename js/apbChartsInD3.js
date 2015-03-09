@@ -37,6 +37,14 @@ function BaseChart() {
   this.line = d3.svg.line();
 };
 
+// Obtains and sets width and height params from chart
+BaseChart.prototype.setWidthHeight = function () {
+  this.config.outerWidth = parseInt(this.config.chart.style("width"));
+  this.config.outerHeight = parseInt(this.config.chart.style("height"));
+  this.config.width = this.config.outerWidth - this.config.margin.left - this.config.margin.right - this.config.padding.left - this.config.padding.right;
+  this.config.height = this.config.outerHeight - this.config.margin.top - this.config.margin.bottom;
+}
+
 // Public setters for chart parameters and config
 BaseChart.prototype.setConfig = function() {
   var chartParent = this.args.chartParent,
@@ -44,12 +52,9 @@ BaseChart.prototype.setConfig = function() {
       chart = d3.select(chartParent);
 
   // Spacing parameters
-  var outerWidth = parseInt(chart.style("width")),
-      outerHeight = parseInt(chart.style("height")),
+  var outerWidth, outerHeight, width, height,
       margin = {top: 20, right: 10, bottom: 20, left: 10},
-      padding = {left: 120, right: 270},
-      width = outerWidth - margin.left - margin.right - padding.left - padding.right,
-      height = outerHeight - margin.top - margin.bottom;
+      padding = {left: 120, right: 270};
 
   // Color parameters
   var color = d3.scale.ordinal()
@@ -78,27 +83,17 @@ BaseChart.prototype.setConfig = function() {
     baseColor: baseColor,
     opacity: opacity
   };
+
+  // Set width and height params
+  this.setWidthHeight();
 };
 
-// function(d) { return config.color(d.Portfolio); }
-
-BaseChart.prototype.getColor = function(d) {
-  return this.config.color(d);
-}
-
 // Public getters for chart parameters and config
-BaseChart.prototype.getConfig = function() {
-  return this.config;
-}
-
-// Destroys chart
-BaseChart.prototype.clearChart = function() {
-  this.config.chart.selectAll("*").remove();
-}
+BaseChart.prototype.getConfig = function() { return this.config; }
 
 // Creates SVG chart-container
 BaseChart.prototype.addChartContainer = function() {
-  this.clearChart(); // Destroy chart first
+  this.removeSelection("__ALL__"); // Destroy chart first
 
   this.svg = this.config.chart.append("svg")
                 .attr("class", "chart-container")
@@ -111,21 +106,19 @@ BaseChart.prototype.addChartContainer = function() {
 }
 
 // Returns number of axis ticks based on chart width.
-BaseChart.prototype.tickCount = function() {
-  return this.config.width > 500 ? 6 : 2;
-}
+BaseChart.prototype.tickCount = function() { return this.config.width > 500 ? 4 : 2; }
 
 // Adds reset button to chart div
 BaseChart.prototype.addResetBtn = function() {
     this.resetBtn = this.config.chart.append("input")
                       .attr("type","button")
                       .attr("value", "Reset")
-                      .attr("class", "reset-btn btn btn-default btn-sm");
+                      .attr("class", "reset-btn btn btn-sm");
 
     return this.resetBtn;
 }
 
-// Set reset button display style
+// Function to set button display styles
 BaseChart.prototype.setBtnDisplay = function(btn, v) {
     if(v) {
       btn.style("display", null);
@@ -134,9 +127,10 @@ BaseChart.prototype.setBtnDisplay = function(btn, v) {
     }
 }
 
-// Removes labels
-BaseChart.prototype.removeDataLabels = function() {
-  this.config.chart.selectAll(".dataLabels").remove();
+// Function to remove specified selection
+BaseChart.prototype.removeSelection = function(elem) {
+  var select = (elem === "__ALL__") ? "*" : elem;
+  this.config.chart.selectAll(select).remove();
 }
 
 
@@ -258,7 +252,7 @@ RulerChart.prototype.draw = function() {
 
     // Add legend.
     legend = svg.append("g")
-              .attr("class","legend")
+              .attr("class", "legend")
               .attr("transform","translate ( " + (config.width + config.padding.left + 50) + ", " + (config.height / 2 - 40) + ")")
                 .selectAll(".legendItems")
                   .data(data)
@@ -313,7 +307,7 @@ RulerChart.prototype.draw = function() {
             d3.select(this).attr("r", config.radius.normal);
 
             // Remove labels
-            self.removeDataLabels();
+            self.removeSelection(".dataLabels");
 
             // Unhighlight legend and axis label
             legend.selectAll(".legendCircle").attr("r", config.radius.normal);
@@ -330,7 +324,7 @@ RulerChart.prototype.draw = function() {
             self.setMainLine();
 
             // Remove labels
-            self.removeDataLabels();
+            self.removeSelection(".dataLabels");
 
             // Recompute x axis domains, centering on data value of clicked circle.
             self.recenterDomains(d);
@@ -381,7 +375,7 @@ RulerChart.prototype.draw = function() {
             svg.selectAll(".axisLabel").classed("activeText", false);
 
             // Remove labels and lines.
-            self.removeDataLabels();
+            self.removeSelection(".dataLabels");
             self.removeLines();
         })
         .on("click", function(d) {
@@ -389,7 +383,7 @@ RulerChart.prototype.draw = function() {
             self.setMainLine();
 
             // Remove labels.
-            self.removeDataLabels();
+            self.removeSelection(".dataLabels");
 
             // Recompute x axis domains, centering on data value of clicked circle.
             self.recenterDomains(d);
@@ -412,7 +406,7 @@ RulerChart.prototype.draw = function() {
         // Remove lines and labels.
         self.removeLines();
         svg.select(".line.main").remove();
-        self.removeDataLabels();
+        self.removeSelection(".dataLabels");
 
         // Reset x axis domain to original extent.
         self.dimensions.map(function(p) {
@@ -427,54 +421,53 @@ RulerChart.prototype.draw = function() {
       });
 
     // Resize chart on window resize.
-    // d3.select(window)
-    //   .on("resize", reSize);
+    d3.select(window)
+      .on("resize", function() { self.reSize(); });
   });
+}
 
-  // Resizes chart.
-  function reSize() {
-    // Recompute width and height from chart width and height.
-    var outerWidth = parseInt(chart.style("width")),
-        outerHeight = parseInt(chart.style("height")),
-        width = outerWidth - margin.left - margin.right - padding.left - padding.right,
-        height = outerHeight - margin.top - margin.bottom;
+// Resizes chart.
+RulerChart.prototype.reSize = function() {
 
-    // Update svg width and height.
-    chart.select(".container")
-          .attr("width", outerWidth)
-          .attr("height", outerHeight);
+  var self = this;
 
-    // Update x and y ranges.
-    y.rangePoints([0, height], 1);
-    dimensions.map(function(p) { x[p].range([floorXpx[p], width]); });
+  // Recompute width and height from chart width and height.
+  this.setWidthHeight();
 
-    // Update y spacing for dimensions.
-    chart.selectAll(".dimension")
-      .attr("transform", function(p) {
-        return "translate( " + padding.left + ", " + y(p) + ")";
-      });
+  // Update svg width and height.
+  this.svg.attr("width", self.config.outerWidth)
+          .attr("height", self.config.outerHeight);
 
-    // Update number of ticks displayed.
-    axis.ticks(tickCount(width));
+  // Update x and y ranges.
+  self.y.rangePoints([0, self.config.height], 1);
+  self.dimensions.map(function(p) { self.x[p].range([self.floorXpx[p], self.config.width]); });
 
-    // Update x axes for dimensions.
-    chart.selectAll(".axis")
-      .each(function(p) { d3.select(this).call(axis.scale(x[p])); });
-
-    // Update x values for circles.
-    chart.selectAll(".dimension").each(function(p) {
-      d3.select(this).selectAll(".circle")
-        .attr("cx", function(d) { return x[p](d[p]); });
+  // Update y spacing for dimensions.
+  this.svg.selectAll(".dimension")
+    .attr("transform", function(p) {
+      return "translate( " + self.config.padding.left + ", " + self.y(p) + ")";
     });
 
-    // Remove centered line (unable to figure out rescaling)
-    chart.select(".line.main").remove();
+  // Update number of ticks displayed.
+  self.axis.ticks(self.tickCount(self.config.width));
 
-    // Update legend location.
-    chart.select(".legend")
-      .attr("display", null)
-      .attr("transform", "translate ( " + (width + padding.left + 50) + ", " + (height / 2 - 40) + ")");
-  }
+  // Update x axes for dimensions.
+  this.svg.selectAll(".axis")
+    .each(function(p) { d3.select(this).call(self.axis.scale(self.x[p])); });
+
+  // Update x values for circles.
+  this.svg.selectAll(".dimension").each(function(p) {
+    d3.select(this).selectAll(".circle")
+      .attr("cx", function(d) { return self.x[p](d[p]); });
+  });
+
+  // Remove centered line (unable to figure out rescaling)
+  this.svg.select(".line.main").remove();
+
+  // Update legend location.
+  this.svg.select(".legend")
+    // .attr("display", null)
+    .attr("transform", "translate ( " + (self.config.width + self.config.padding.left + 50) + ", " + (self.config.height / 2 - 40) + ")");
 }
 
 // Adds data labels and highlights axis.
