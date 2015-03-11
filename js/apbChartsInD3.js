@@ -2,8 +2,8 @@
 
 // Convenient Interitance
 // http://phrogz.net/JS/classes/OOPinJS2.html
-Function.prototype.inheritsFrom = function( parentClassOrObject ){
-  if ( parentClassOrObject.constructor == Function ) {
+Function.prototype.inheritsFrom = function(parentClassOrObject) {
+  if (parentClassOrObject.constructor == Function) {
     //Normal Inheritance
     this.prototype = new parentClassOrObject;
     this.prototype.constructor = this;
@@ -35,10 +35,10 @@ function I(d) { return d; }
 function BaseChart() {
   this.axis = d3.svg.axis();
   this.line = d3.svg.line();
-};
+}
 
 // Obtains and sets width and height params from chart
-BaseChart.prototype.setWidthHeight = function () {
+BaseChart.prototype.setWidthHeight = function() {
   this.config.outerWidth = parseInt(this.config.chart.style("width"));
   this.config.outerHeight = parseInt(this.config.chart.style("height"));
   this.config.width = this.config.outerWidth - this.config.margin.left - this.config.margin.right - this.config.padding.left - this.config.padding.right;
@@ -58,7 +58,7 @@ BaseChart.prototype.setConfig = function() {
       ordinalPadding = 0.5, legendSpacing = 18;
 
   // Color parameters
-  var color = d3.scale.ordinal().range(['#37B34A', '#008CCF', '#671E75', '#ED8B00', '#FFCD00']),
+  var color = d3.scale.ordinal().range(["#37B34A", "#008CCF", "#671E75", "#ED8B00", "#FFCD00"]),
       baseColor = "#EBEBEB";
 
   // Visual element and transition parameters
@@ -88,10 +88,10 @@ BaseChart.prototype.setConfig = function() {
 
   // Set width and height params
   this.setWidthHeight();
-};
+}
 
 // Public getters for chart parameters and config
-BaseChart.prototype.getConfig = function() { return this.config; }
+BaseChart.prototype.getConfig = function() { return this.config; };
 
 // Creates SVG chart-container
 BaseChart.prototype.addChartContainer = function() {
@@ -108,10 +108,14 @@ BaseChart.prototype.addChartContainer = function() {
 // Process chart data
 BaseChart.prototype.processChartData = function () {
   this.displayName = {};
-  this.categories = [], this.dimensions = [];
-  this.dataSeries = {}, this.categoryData = {};
-  this.origExtent = {}, this.floor = {}, this.floorXpx = {};
-  this.x = {}, this.y;
+  this.categories = [];
+  this.dimensions = [];
+  this.dataSeries = {};
+  this.categoryData = {};
+  this.origExtent = {};
+  this.floor = {};
+  this.floorXpx = {};
+  this.x = {};
 
   var self = this;
   var data = self.config.chartData;
