@@ -58,7 +58,7 @@ BaseChart.prototype.setConfig = function() {
       ordinalPadding = 0.5, legendSpacing = 18;
 
   // Color parameters
-  var color = d3.scale.ordinal().range(["#37B34A", "#008CCF", "#671E75", "#ED8B00", "#FFCD00"]),
+  var color = d3.scale.ordinal().range(["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"]),
       baseColor = "#EBEBEB";
 
   // Visual element and transition parameters
