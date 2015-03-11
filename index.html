@@ -12,14 +12,13 @@
 		<script src="js/ext/jquery-1.11.1.min.js" type="text/javascript"></script>
 		<script src="js/ext/bootstrap.min.js" type="text/javascript"></script>
 		<script src="js/ext/d3.min.js" type="text/javascript"></script>
-		<script src="data/rulerChartData.js" type="text/javascript"></script>
 	    <script src="js/apbChartsInD3.js" type="text/javascript"></script>
 	</head>
 	<body>
 		<style type="text/css">
 			div {
 			  width: 1000px;
-			  height: 500px;
+			  height: 600px;
 			  border: 2px solid #CCCCCC;
 			  position: relative;
 			}
@@ -29,21 +28,20 @@
 		<div id="chart"></div>
 		<div id="chart2"></div>
 
+		<script src="data/rulerChartData.js" type="text/javascript"></script>
 		<script>
 			var args = {}, myChart, myChart2;
 
 			args = {
 				"chartParent"	: "#chart",
-				// "chartData"		: rulerChartData
-				"chartData"		: "data/data_ruler.csv"
+				"chartData"		: chartDataVar
 			};
 			myChart = new RulerChart(args);
 			myChart.draw();
 
 			args = {
 				"chartParent"	: "#chart2",
-				// "chartData"		: rulerChartData2
-				"chartData"		: "data/data_ruler_v2.csv"
+				"chartData"		: chartDataVar2
 			};
 			myChart2 = new RulerChart(args);
 			myChart2.draw();

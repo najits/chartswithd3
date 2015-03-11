@@ -1,4 +1,4 @@
-var rulerChartData = {
+var chartDataVar = {
   "chart": {
     "title": {
       "text": "Portfolio Characteristics & Exposures"
@@ -18,9 +18,9 @@ var rulerChartData = {
     {
       "name": "incomeYield",
       "parameters": {
-        "min": 0,
-        "max": 10,
-        "floor": -5,
+        "min": 0.0,
+        "max": 5.0,
+        "floor": 0.0,
         "displayName": "Income Yield"
       },
       "data": [
@@ -34,14 +34,14 @@ var rulerChartData = {
     {
       "name": "expense",
       "parameters": {
-        "min": 0,
-        "max": 10,
-        "floor": 0,
+        "min": 0.0,
+        "max": 1.0,
+        "floor": 0.0,
         "displayName": "Expense Ratio"
       },
       "data": [
-        0,
-        0,
+        0.55,
+        0.78,
         0.10140000000000002,
         0.10540000000000001,
         0.09270000000000002
@@ -51,7 +51,8 @@ var rulerChartData = {
       "name": "risk_total",
       "parameters": {
         "min": 0,
-        "max": 10,
+        "max": 15,
+        "floor": 0,
         "displayName": "Total Risk"
       },
       "data": [
@@ -66,8 +67,7 @@ var rulerChartData = {
       "name": "oad",
       "parameters": {
         "min": 0,
-        "max": 10,
-        "floor": 0,
+        "max": 8,
         "displayName": "Duration"
       },
       "data": [
@@ -81,7 +81,8 @@ var rulerChartData = {
   ]
 };
 
-var rulerChartData2 = {
+var chartDataVar2 =
+  {
   "chart": {
     "title": {
       "text": "Portfolio Characteristics & Exposures 2"
@@ -99,18 +100,18 @@ var rulerChartData2 = {
   },
   "series": [
     {
-      "name": "incomeYield",
+      "name": "ig_beta",
       "parameters": {
         "min": 0,
         "max": 10,
         "floor": 0,
-        "displayName": "Income Yield"
+        "displayName": "IG Beta"
       },
       "data": [
         2.20001683726,
         2.2424999999999997,
         3.00435302271,
-        2.61565915641,
+        2.516,
         2.2660096221
       ]
     },

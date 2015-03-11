@@ -9,6 +9,11 @@ text {
   fill: #777777;
 }
 
+.chartTitle text {
+  text-anchor: middle;
+  font-size: 18px;
+}
+
 .axisLabel {
   text-anchor: end;
 }
@@ -36,6 +41,10 @@ text {
 .circle,
 .legendItems {
   cursor: crosshair;
+}
+
+.legendLabel {
+  text-anchor: end;
 }
 
 .reset-btn {
