@@ -37,7 +37,36 @@ function BaseChart() {
   this.line = d3.svg.line();
 }
 
-// Obtains and sets width and height params from chart
+// Stores and provides default config options
+BaseChart.prototype.setToDefaultParams = function() {
+  var defaultParams = {
+    // Margins, padding and spacing
+    margin:               {top: 10, right: 10, bottom: 10, left: 10},
+    padding:              {left: 100, right: 50, top: 50, bottom: 100},
+    ordinalPadding:       0.5,
+    legendSpacing:        18,
+    // Color and opacity
+    colorRange:           ["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"],
+    baseColor:            "#EBEBEB",
+    opacity:              {start: 0.1, end: 0.6},
+    // Element sizes
+    radius:               {normal: 7, large: 10},
+    // Transitions
+    transition:           {duration: 1250, durationShort: 500, delay: 100}
+  };
+
+  for(var prop in defaultParams) {
+    this.config[prop] = defaultParams[prop];
+  }
+
+  // Set color range
+  this.setColorRange();
+
+  // Set width and height params
+  this.setWidthHeight();
+}
+
+// Computes and sets width/height params from chart width/height
 BaseChart.prototype.setWidthHeight = function() {
   this.config.outerWidth = parseInt(this.config.chart.style("width"));
   this.config.outerHeight = parseInt(this.config.chart.style("height"));
@@ -45,26 +74,28 @@ BaseChart.prototype.setWidthHeight = function() {
   this.config.height = this.config.outerHeight - this.config.margin.top - this.config.margin.bottom - this.config.padding.top - this.config.padding.bottom;
 }
 
+// Set color range
+BaseChart.prototype.setColorRange = function() { this.config.color.range(this.config.colorRange); }
+
 // Public setters for chart parameters and config
 BaseChart.prototype.setConfig = function() {
   var chartParent = this.args.chartParent,
       chartData = this.args.chartData,
       chart = d3.select(chartParent);
 
-  // Spacing parameters
-  var outerWidth, outerHeight, width, height,
-      margin = {top: 10, right: 10, bottom: 10, left: 10},
-      padding = {left: 100, right: 50, top: 50, bottom: 100},
-      ordinalPadding = 0.5, legendSpacing = 18;
+  // Margins, padding and spacing
+  var outerWidth, outerHeight, margin, padding, width, height,
+      ordinalPadding, legendSpacing;
 
-  // Color parameters
-  var color = d3.scale.ordinal().range(["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"]),
-      baseColor = "#EBEBEB";
+  // Color and opacity
+  var colorRange, baseColor, opacity,
+      color = d3.scale.ordinal();
 
-  // Visual element and transition parameters
-  var radius = {normal: 7, large: 10},
-      transition = {duration: 1250, durationShort: 500, delay: 100},
-      opacity = {start: 0.1, end: 0.7};
+  // Element sizes
+  var radius;
+
+  // Transitions
+  var transition;
 
   // Create config object
   this.config = {
@@ -79,15 +110,16 @@ BaseChart.prototype.setConfig = function() {
     height: height,
     ordinalPadding: ordinalPadding,
     legendSpacing: legendSpacing,
-    radius: radius,
-    transition: transition,
+    colorRange: colorRange,
     color: color,
     baseColor: baseColor,
-    opacity: opacity
+    opacity: opacity,
+    radius: radius,
+    transition: transition
   };
 
-  // Set width and height params
-  this.setWidthHeight();
+  // Set to default params
+  this.setToDefaultParams();
 }
 
 // Public getters for chart parameters and config
