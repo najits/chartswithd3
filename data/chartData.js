@@ -1,4 +1,4 @@
-var chartDataVar = {
+var rulerChartData1 = {
   "chart": {
     "title": {
       "text": "Portfolio Characteristics & Exposures"
@@ -81,8 +81,7 @@ var chartDataVar = {
   ]
 };
 
-var chartDataVar2 =
-  {
+var rulerChartData2 = {
   "chart": {
     "title": {
       "text": "Portfolio Characteristics & Exposures 2"
@@ -163,4 +162,60 @@ var chartDataVar2 =
       ]
     }
   ]
+};
+
+var scatterPlotData1 = {
+   chart: {
+      title: {
+         text: "Scatter Plot of Income Yield vs. Total Risk"
+      },
+      placeholder: "For chart level options"
+   },
+   xAxis: {
+      title: {
+         text: "Total Risk"
+      }
+   },
+   yAxis: {
+      title: {
+         text: "Income Yield"
+      }
+   },
+   series: [
+      {
+         name: "GIC Tactical Asset Allocation Model 6",
+         data: [
+            12.463279194068054,
+            2.20001683726
+         ]
+      },
+      {
+         name: "High Quality and Dividend",
+         data: [
+            14.069455231422165,
+            2.2424999999999997
+         ]
+      },
+      {
+         name: "Long-Term Allocation ETF 40/60",
+         data: [
+            6.2706826905590605,
+            3.00435302271
+         ]
+      },
+      {
+         name: "Long-Term Allocation ETF 70/30",
+         data: [
+            10.528992636646464,
+            2.61565915641
+         ]
+      },
+      {
+         name: "Long-Term Allocation ETF 90/10",
+         data: [
+            13.363294601069397,
+            2.2660096221
+         ]
+      }
+   ]
 };
