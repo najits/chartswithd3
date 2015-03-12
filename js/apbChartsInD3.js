@@ -267,7 +267,7 @@ BaseChart.prototype.addLabel = function(elem) {
 }
 
 // Returns number of axis ticks based on chart width.
-BaseChart.prototype.tickCount = function() { return this.config.width > 500 ? 4 : 2; }
+BaseChart.prototype.tickCount = function() { return this.config.width > 600 ? 4 : 2; }
 
 // Adds reset button to chart div
 BaseChart.prototype.addResetBtn = function() {
@@ -440,13 +440,13 @@ RulerChart.prototype.draw = function() {
           // Recompute x axis domains, centering on data value of clicked circle.
           self.recenterDomains(d);
 
-          // Transition clicked circle instantenously to void conflicts with listeners.
+          // Transition clicked circle instantaneously to avoid conflicts with listeners.
           d3.select(this).attr("transform", "translate(" + self.x[d.series](d.value) + "," + 0 + ")");
 
           // Re-draw and animate x axes and circles using new domains.
           self.reScale();
 
-          // // Animate lines.
+          // Animate lines.
           self.centerMainLine(d);
 
           // Unhighlight legend and axis labels.
@@ -536,8 +536,10 @@ RulerChart.prototype.draw = function() {
       self.reScale();
     });
 
-  // Resize chart on window resize.
-  self.config.chart.on("resize", function() { self.reSize(); });
+  // Resize chart on window resize
+  // https://github.com/mbostock/d3/wiki/Selections#on
+  // To register multiple listeners for the same event type, the type may be followed by an optional namespace...
+  d3.select(window).on("resize" + "." + self.config.chartParent, function() { self.reSize(); });
 }
 
 // Resizes chart.
@@ -548,7 +550,8 @@ RulerChart.prototype.reSize = function() {
   this.setWidthHeight();
 
   // Update svg width and height.
-  this.svg.attr("width", self.config.outerWidth)
+  this.config.chart.select(".chart-container")
+          .attr("width", self.config.outerWidth)
           .attr("height", self.config.outerHeight);
 
   // Update chart title placement.
