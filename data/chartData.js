@@ -1,221 +1,423 @@
 var rulerChartData1 = {
-  "chart": {
-    "title": {
-      "text": "Portfolio Characteristics & Exposures"
+    chart: {
+        title: {
+            text: "Portfolio Characteristics & Exposures"
+        },
+        placeholder: "For chart level options"
     },
-    "placeholder": "For chart level options"
-  },
-  "xAxis": {
-    "categories": [
-      "GIC Tactical Asset Allocation Model 6",
-      "High Quality and Dividend",
-      "Long-Term Allocation ETF 40/60",
-      "Long-Term Allocation ETF 70/30",
-      "Long-Term Allocation ETF 90/10"
-    ]
-  },
-  "series": [
-    {
-      "name": "incomeYield",
-      "parameters": {
-        "min": 0.0,
-        "max": 5.0,
-        "floor": 0.0,
-        "displayName": "Income Yield"
-      },
-      "data": [
-        2.20001683726,
-        2.2424999999999997,
-        3.00435302271,
-        2.61565915641,
-        2.2660096221
-      ]
+    xAxis: {
+        placeholder: "For Global x-Axis properties",
+            axes: [
+            {
+                name: "incomeYield",
+                parameters: {
+                    min: 0,
+                    max: 5,
+                    floor: 0,
+                    displayName: "Income Yield"
+                }
+            },
+            {
+                name: "expense",
+                parameters: {
+                    min: 0,
+                    max: 1,
+                    floor: 0,
+                    displayName: "Expense Ratio"
+                }
+            },
+            {
+                name: "risk_total",
+                parameters: {
+                    min: 0,
+                    max: 15,
+                    floor: 0,
+                    displayName: "Total Risk"
+                }
+            },
+            {
+                name: "oad",
+                parameters: {
+                    min: 0,
+                    max: 7,
+                    displayName: "Duration"
+                }
+            }
+        ]
     },
-    {
-      "name": "expense",
-      "parameters": {
-        "min": 0.0,
-        "max": 1.0,
-        "floor": 0.0,
-        "displayName": "Expense Ratio"
-      },
-      "data": [
-        0.55,
-        0.78,
-        0.10140000000000002,
-        0.10540000000000001,
-        0.09270000000000002
-      ]
-    },
-    {
-      "name": "risk_total",
-      "parameters": {
-        "min": 0,
-        "max": 15,
-        "floor": 0,
-        "displayName": "Total Risk"
-      },
-      "data": [
-        12.463279194068054,
-        14.069455231422165,
-        6.2706826905590605,
-        10.528992636646464,
-        13.363294601069397
-      ]
-    },
-    {
-      "name": "oad",
-      "parameters": {
-        "min": 0,
-        "max": 8,
-        "displayName": "Duration"
-      },
-      "data": [
-        0.2666,
-        0,
-        2.9985,
-        1.4775000000000003,
-        0.507
-      ]
+    series: {
+        placeholder: "For Global series properties",
+            data: [
+            {
+                name: "GIC Tactical Asset Allocation Model 6",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.20001683726
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 12.463279194068054
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0.2666
+                    }
+                ]
+            },
+            {
+                name: "High Quality and Dividend",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.2424999999999997
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 14.069455231422165
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 40/60",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 3.00435302271
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0.10140000000000002
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 6.2706826905590605
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 2.9985
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 70/30",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.61565915641
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0.10540000000000001
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 10.528992636646464
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 1.4775000000000003
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 90/10",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.2660096221
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0.09270000000000002
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 13.363294601069397
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0.507
+                    }
+                ]
+            }
+        ]
     }
-  ]
 };
 
 var rulerChartData2 = {
-  "chart": {
-    "title": {
-      "text": "Portfolio Characteristics & Exposures 2"
+    chart: {
+        title: {
+            text: "Portfolio Characteristics & Exposures 2"
+        },
+        placeholder: "For chart level options"
     },
-    "placeholder": "For chart level options"
-  },
-  "xAxis": {
-    "categories": [
-      "Test 1",
-      "My Portfolio 1",
-      "High Quality & Dividend",
-      "Long-Term Allocation ETF 70/30",
-      "Long-Term Allocation ETF 90/10"
-    ]
-  },
-  "series": [
-    {
-      "name": "ig_beta",
-      "parameters": {
-        "min": 0,
-        "max": 10,
-        "floor": 0,
-        "displayName": "IG Beta"
-      },
-      "data": [
-        2.20001683726,
-        2.2424999999999997,
-        3.00435302271,
-        2.516,
-        2.2660096221
-      ]
+    xAxis: {
+        placeholder: "For Global x-Axis properties",
+            axes: [
+            {
+                name: "ig_beta",
+                parameters: {
+                    min: -5,
+                    max: 5,
+                    displayName: "IG Beta"
+                }
+            },
+            {
+                name: "expense",
+                parameters: {
+                    min: 0,
+                    max: 1,
+                    floor: 0,
+                    displayName: "Expense Ratio"
+                }
+            },
+            {
+                name: "risk_total",
+                parameters: {
+                    min: 0,
+                    max: 15,
+                    floor: 0,
+                    displayName: "Total Risk"
+                }
+            },
+            {
+                name: "oad",
+                parameters: {
+                    min: -1,
+                    max: 7,
+                    displayName: "Duration"
+                }
+            }
+        ]
     },
-    {
-      "name": "expense",
-      "parameters": {
-        "min": 0,
-        "max": 2,
-        "floor": 0,
-        "displayName": "Expense Ratio"
-      },
-      "data": [
-        0,
-        0,
-        0.10140000000000002,
-        0.10540000000000001,
-        0.09270000000000002
-      ]
-    },
-    {
-      "name": "risk_total",
-      "parameters": {
-        "min": 0,
-        "max": 18,
-        "displayName": "Total Risk"
-      },
-      "data": [
-        12.463279194068054,
-        14.069455231422165,
-        6.2706826905590605,
-        10.528992636646464,
-        13.363294601069397
-      ]
-    },
-    {
-      "name": "oad",
-      "parameters": {
-        "min": 0,
-        "max": 10,
-        "floor": 0,
-        "displayName": "Duration"
-      },
-      "data": [
-        0.2666,
-        0,
-        2.9985,
-        1.4775000000000003,
-        0.507
-      ]
+    series: {
+        placeholder: "For Global series properties",
+            data: [
+            {
+                name: "GIC Tactical Asset Allocation Model 6",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.20001683726
+                    },
+                    {
+                        xAxisName: "ig_beta",
+                        x: 4.5
+                    },
+                    {
+                        xAxisName: "expense",
+                        x: 0
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 12.463279194068054
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0.2666
+                    }
+                ]
+            },
+            {
+                name: "High Quality and Dividend",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.2424999999999997
+                    },
+                    {
+                        xAxisName: "ig_beta",
+                        x: 1.25
+                    },                    
+                    {
+                        xAxisName: "expense",
+                        x: 0
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 14.069455231422165
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 40/60",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 3.00435302271
+                    },
+                    {
+                        xAxisName: "ig_beta",
+                        x: -2.222
+                    },                    
+                    {
+                        xAxisName: "expense",
+                        x: 0.10140000000000002
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 6.2706826905590605
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 2.9985
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 70/30",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.61565915641
+                    },
+                    {
+                        xAxisName: "ig_beta",
+                        x: -4.2
+                    },                    
+                    {
+                        xAxisName: "expense",
+                        x: 0.10540000000000001
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 10.528992636646464
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 1.4775000000000003
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 90/10",
+                data: [
+                    {
+                        xAxisName: "incomeYield",
+                        x: 2.2660096221
+                    },
+                    {
+                        xAxisName: "ig_beta",
+                        x: 0
+                    },                    
+                    {
+                        xAxisName: "expense",
+                        x: 0.09270000000000002
+                    },
+                    {
+                        xAxisName: "risk_total",
+                        x: 13.363294601069397
+                    },
+                    {
+                        xAxisName: "oad",
+                        x: 0.507
+                    }
+                ]
+            }
+        ]
     }
-  ]
 };
 
 var scatterPlotData1 = {
-   "chart": {
-      "title": {
-         "text": "Scatter Plot of Income Yield vs. Total Risk"
-      },
-      "placeholder": "For chart level options"
-   },
-   "xAxis": {
-      "title": {
-         "text": "Total Risk"
-      }
-   },
-   "yAxis": {
-      "title": {
-         "text": "Income Yield"
-      }
-   },
-   "series": [
-      {
-         "name": "GIC Tactical Asset Allocation Model 6",
-         "data": [
-            12.463279194068054,
-            2.20001683726
-         ]
-      },
-      {
-         "name": "High Quality and Dividend",
-         "data": [
-            14.069455231422165,
-            2.2424999999999997
-         ]
-      },
-      {
-         "name": "Long-Term Allocation ETF 40/60",
-         "data": [
-            6.2706826905590605,
-            3.00435302271
-         ]
-      },
-      {
-         "name": "Long-Term Allocation ETF 70/30",
-         "data": [
-            10.528992636646464,
-            2.61565915641
-         ]
-      },
-      {
-         "name": "Long-Term Allocation ETF 90/10",
-         "data": [
-            13.363294601069397,
-            2.2660096221
-         ]
-      }
-   ]
+    chart: {
+        title: {
+            text: "Scatter Plot of Income Yield vs. Total Risk"
+        },
+        placeholder: "For chart level options"
+    },
+    xAxis: {
+        placeholder: "For Global x-Axis properties",
+            axes: [
+            {
+                name: "risk_total",
+                parameters: {
+                    min: 0,
+                    max: 15,
+                    floor: 0,
+                    displayName: "Total Risk"
+                }
+            }
+        ]
+    },
+    yAxis: {
+        placeholder: "For Global y-Axis properties",
+            axes: [
+            {
+                name: "incomeYield",
+                parameters: {
+                    min: 0,
+                    max: 5,
+                    floor: 0,
+                    displayName: "Income Yield"
+                }
+            }
+        ]
+    },
+    series: {
+        placeholder: "For Global series properties",
+            data: [
+            {
+                name: "GIC Tactical Asset Allocation Model 6",
+                data: [
+                    {
+                        x: 12.463279194068054,
+                        y: 2.20001683726
+                    }
+                ]
+            },
+            {
+                name: "High Quality and Dividend",
+                data: [
+                    {
+                        x: 14.069455231422165,
+                        y: 2.2424999999999997
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 40/60",
+                data: [
+                    {
+                        x: 6.2706826905590605,
+                        y: 3.00435302271
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 70/30",
+                data: [
+                    {
+                        x: 10.528992636646464,
+                        y: 2.61565915641
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 90/10",
+                data: [
+                    {
+                        x: 13.363294601069397,
+                        y: 2.2660096221
+                    }
+                ]
+            }
+        ]
+    }
 };
