@@ -70,23 +70,23 @@ var rulerChartData1 = {
                 ]
             },
             {
-                name: "High Quality and Dividend",
+                name: "GIC Tactical Asset Allocation Model 6",
                 data: [
                     {
                         xAxisName: "incomeYield",
-                        x: 2.2424999999999997
+                        x: 2.21001683726
                     },
                     {
                         xAxisName: "expense",
-                        x: 0
+                        x: 0.06
                     },
                     {
                         xAxisName: "risk_total",
-                        x: 14.069455231422165
+                        x: 12.54
                     },
                     {
                         xAxisName: "oad",
-                        x: 0
+                        x: -0.2666
                     }
                 ]
             },
@@ -168,20 +168,20 @@ var rulerChartData2 = {
         placeholder: "For Global x-Axis properties",
             axes: [
             {
-                name: "ig_beta",
+                name: "incomeYield",
                 parameters: {
-                    min: -5,
+                    min: 0,
                     max: 5,
-                    displayName: "IG Beta"
+                    floor: 0,
+                    displayName: "Income Yield"
                 }
             },
             {
-                name: "expense",
+                name: "oad",
                 parameters: {
-                    min: 0,
-                    max: 1,
-                    floor: 0,
-                    displayName: "Expense Ratio"
+                    min: -1,
+                    max: 7,
+                    displayName: "Duration"
                 }
             },
             {
@@ -194,11 +194,11 @@ var rulerChartData2 = {
                 }
             },
             {
-                name: "oad",
+                name: "ig_beta",
                 parameters: {
-                    min: -1,
-                    max: 7,
-                    displayName: "Duration"
+                    min: -5,
+                    max: 5,
+                    displayName: "IG Beta"
                 }
             }
         ]
@@ -241,7 +241,7 @@ var rulerChartData2 = {
                     {
                         xAxisName: "ig_beta",
                         x: 1.25
-                    },                    
+                    },
                     {
                         xAxisName: "expense",
                         x: 0
@@ -266,7 +266,7 @@ var rulerChartData2 = {
                     {
                         xAxisName: "ig_beta",
                         x: -2.222
-                    },                    
+                    },
                     {
                         xAxisName: "expense",
                         x: 0.10140000000000002
@@ -291,7 +291,7 @@ var rulerChartData2 = {
                     {
                         xAxisName: "ig_beta",
                         x: -4.2
-                    },                    
+                    },
                     {
                         xAxisName: "expense",
                         x: 0.10540000000000001
@@ -316,7 +316,7 @@ var rulerChartData2 = {
                     {
                         xAxisName: "ig_beta",
                         x: 0
-                    },                    
+                    },
                     {
                         xAxisName: "expense",
                         x: 0.09270000000000002
