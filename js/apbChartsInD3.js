@@ -45,6 +45,7 @@ BaseChart.prototype.setToDefaultParams = function() {
     padding:              {left: 100, right: 50, top: 50, bottom: 100},
     ordinalPadding:       0.5,
     legendSpacing:        18,
+    dy:                   {legend: "0.35em", xAxis: "-0.20em", yAxis: "1.00em"},
     // Color and opacity
     colorRange:           ["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"],
     baseColor:            "#EBEBEB",
@@ -75,6 +76,9 @@ BaseChart.prototype.setWidthHeight = function() {
   this.config.width = this.config.outerWidth - this.config.margin.left - this.config.margin.right - this.config.padding.left - this.config.padding.right;
   this.config.height = this.config.outerHeight - this.config.margin.top - this.config.margin.bottom - this.config.padding.top - this.config.padding.bottom;
 
+  this.config.axisPlacement.x = this.config.height - (2 * this.config.radius.large);
+  this.config.axisPlacement.y = -2 * this.config.radius.large;
+
   // Set x-axis tick count
   this.axis.ticks(this.tickCount());
 }
@@ -92,7 +96,7 @@ BaseChart.prototype.setConfig = function() {
 
   // Margins, padding and spacing
   var outerWidth, outerHeight, margin, padding, width, height,
-      ordinalPadding, legendSpacing;
+      ordinalPadding, legendSpacing, axisPlacement = {}, dy = {};
 
   // Color and opacity
   var colorRange, baseColor, opacity,
@@ -120,6 +124,8 @@ BaseChart.prototype.setConfig = function() {
     height: height,
     ordinalPadding: ordinalPadding,
     legendSpacing: legendSpacing,
+    axisPlacement: axisPlacement,
+    dy: dy,
     colorRange: colorRange,
     colorScale: colorScale,
     baseColor: baseColor,
@@ -194,7 +200,7 @@ BaseChart.prototype.addChartLegend = function() {
               .text(function(d) { return self.seriesData[d].name;})
               .attr("y", function(d, i) { return self.config.legendSpacing * i; })
               .attr("x", -0.5 * self.config.radius.large)
-              .attr("dy", "0.35em")
+              .attr("dy", self.config.dy.legend)
               .style("pointer-events", "none")
                 .transition()
                   .delay(function(d, i) { return i * self.config.transition.delay; })
@@ -249,6 +255,7 @@ BaseChart.prototype.processChartData = function () {
   this.dimensions = {};
   this.seriesData = {};
   this.x = {};
+  this.xSpacingInY = {};
 
   var self = this;
 
@@ -264,16 +271,17 @@ BaseChart.prototype.processChartData = function () {
         self.dimensions.x[d.name].calcs.floorXpx = 0; // Set floorXpx to 0
         self.x[d.name] = d3.scale.linear().range([self.dimensions.x[d.name].calcs.floorXpx, self.config.width]);
       })
+      self.xSpacingInY = d3.scale.ordinal().domain(d3.keys(self.dimensions.x));
   }
 
-  // If provided multiple x-axes, ignore yAxis inputs and compute y-axis as an ordinal scale for vertical placement of x-axes
+  // If provided multiple x-axes, ignore yAxis inputs
   if(d3.keys(self.dimensions.x).length > 1) {
-      // Y-scale becomes an ordinal scale for x-axes vertical spacing
-      self.y = d3.scale.ordinal()
-                  .rangePoints([0, self.config.height], self.config.ordinalPadding)
-                  .domain(d3.keys(self.dimensions.x));
+      // Place x-axes vertically across chart height
+      self.xSpacingInY.rangePoints([0, self.config.height], self.config.ordinalPadding)
   // Otherwise, extract y-axes and add to dimensions
   } else {
+    // Fix x-axis placement
+    self.xSpacingInY.range([self.config.axisPlacement.x, self.config.axisPlacement.x]);
     // Extract yAxis.axes
     if(self.config.chartData.yAxis != null) {
         self.dimensions.y = {};
@@ -291,7 +299,6 @@ BaseChart.prototype.processChartData = function () {
 
   // Extract series.data
   self.config.chartData.series.data.forEach(function(d, i) {
-
     self.seriesData[i] = {};    // 'i' serves as unique index for seriesData
     self.seriesData[i].name = d.name;
     self.seriesData[i].dataObjects = [];
@@ -372,6 +379,72 @@ BaseChart.prototype.processChartData = function () {
   };
 }
 
+// Adds x and y axes
+BaseChart.prototype.addChartAxes = function () {
+  var self = this;
+
+  // Process x axes
+  if(d3.keys(self.dimensions.x).length > 0) {
+      // Add a group element for each x-axis
+      self.xAxes = self.svg.selectAll(".dimension")
+                        .data(d3.keys(self.dimensions.x))
+                        .enter().append("g")
+                          .attr("class", "dimension")
+                          .attr("transform", function(p) {
+                            return "translate( " + self.config.padding.left + ", " + (self.config.padding.top + self.xSpacingInY(p)) + ")";
+                          });
+
+      // Add x-axes
+      self.xAxes.append("g")
+                .attr("class", "axis")
+                .each(function(p) {
+                  d3.select(this)
+                    .transition()
+                      .duration(self.config.transition.duration)
+                    .call(self.axis.scale(self.x[p]));
+                });
+
+      var axisLabel = self.xAxes.append("text")
+            .attr("class", "axisLabel")
+            .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
+
+      // Add x-axis titles
+      if(d3.keys(self.dimensions.x).length > 1) {
+        axisLabel.attr("x", -1 * self.config.radius.large);
+      } else {
+        axisLabel.attr("x", self.config.width)
+                 .attr("dy", self.config.dy.xAxis);
+      }
+    }
+
+  // Process y axes
+  if(d3.keys(self.dimensions.y).length > 0) {
+    // Add a group element for y-axis
+    self.yAxis = self.svg.selectAll(".y-axis")
+                    .data(d3.keys(self.dimensions.y))
+                    .enter().append("g")
+                      .attr("class", "dimension")
+                      .attr("transform", "translate( " + self.config.padding.left + ", " + (self.config.padding.top + self.config.axisPlacement.y) + ")");
+
+    // Add y-axis
+    self.yAxis.append("g")
+              .attr("class", "axis")
+              .each(function(p) {
+                d3.select(this)
+                  .transition()
+                    .duration(self.config.transition.duration)
+                  .call(self.axis.orient("left").scale(self.y[p]));
+              });
+
+    // Add y-axis title
+    self.yAxis.append("text")
+              .attr("class", "axisLabel")
+              .attr("transform", "rotate(-90)")
+              .attr("dy", self.config.dy.yAxis)
+              .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
+  }
+}
+
 // Parent draw function to generate basic chart layout
 BaseChart.prototype.draw = function() {
   // Create SVG to house chart
@@ -389,6 +462,9 @@ BaseChart.prototype.draw = function() {
 
   // Add legend
   this.addChartLegend();
+
+  // Add chart axes
+  this.addChartAxes();
 }
 
 
@@ -417,33 +493,8 @@ RulerChart.prototype.draw = function() {
   // Carry 'this' context in 'self'
   var self = this;
 
-  // Add a group element for each x-axis
-  var xAxes = svg.selectAll(".dimension")
-                  .data(d3.keys(self.dimensions.x))
-                  .enter().append("g")
-                    .attr("class", "dimension")
-                    .attr("transform", function(p) {
-                      return "translate( " + config.padding.left + ", " + (config.padding.top + self.y(p)) + ")";
-                    });
-
-  // Add x-axes
-  xAxes.append("g")
-        .attr("class", "axis")
-        .each(function(p) {
-          d3.select(this)
-            .transition()
-              .duration(config.transition.duration)
-            .call(self.axis.scale(self.x[p]));
-        });
-
-  // Add x-axis titles
-  xAxes.append("text")
-        .attr("class", "axisLabel")
-        .attr("x", -1 * config.radius.large)
-        .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
-
   // Add circles to x-axis dimensions
-  xAxes.each(function(p) {
+  this.xAxes.each(function(p) {
     d3.select(this).selectAll(".g-circle")
       .data(self.dimensions.x[p].dataObjects)
     .enter().append("g")
@@ -636,7 +687,7 @@ RulerChart.prototype.drawLine = function(d) {
 RulerChart.prototype.path = function(d) {
   var self = this;
   return self.line(d3.keys(self.dimensions.x).map(function(p) {
-                return [self.x[p](self.seriesData[d].dataObjects.filter(function(dd) { return dd.axisName === p; })[0].value), self.y(p)];
+                return [self.x[p](self.seriesData[d].dataObjects.filter(function(dd) { return dd.axisName === p; })[0].value), self.xSpacingInY(p)];
           }));
 }
 
@@ -681,7 +732,7 @@ RulerChart.prototype.recenterDomains = function(d) {
 // Redraws axes and circles
 RulerChart.prototype.reScale = function() {
   var self = this;
-  self.svg.selectAll(".dimension").each(function(p) {
+  self.xAxes.each(function(p) {
     d3.select(this).selectAll(".axis")
       .transition()
         .duration(self.config.transition.durationShort)
@@ -722,14 +773,14 @@ RulerChart.prototype.reSize = function() {
       .attr("transform","translate( " + (self.config.padding.left + self.config.width + self.config.padding.right) / 2 + ", " + (self.config.padding.top / 2) + ")");
 
   // Update x and y ranges.
-  self.y.rangePoints([0, self.config.height], self.config.ordinalPadding);
+  this.xSpacingInY.rangePoints([0, self.config.height], self.config.ordinalPadding);
   d3.keys(self.dimensions.x).map(function(p) { self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
 
   // Update dimension related elements
-  this.svg.selectAll(".dimension").each(function(p) {
+  this.xAxes.each(function(p) {
     // Update y spacing.
     d3.select(this)
-      .attr("transform", function(p) { return "translate( " + self.config.padding.left + ", " + (self.config.padding.top + self.y(p)) + ")" });
+      .attr("transform", function(p) { return "translate( " + self.config.padding.left + ", " + (self.config.padding.top + self.xSpacingInY(p)) + ")" });
 
     // Update x axes.
     d3.select(this).selectAll(".axis")
@@ -773,54 +824,6 @@ ScatterPlot.prototype.draw = function() {
 
   // Carry 'this' context in 'self'
   var self = this;
-
-  // Add a group element for x-axis
-  var xAxis = svg.selectAll(".x-axis")
-                .data(d3.keys(self.dimensions.x))
-                .enter().append("g")
-                  .attr("class", "dimension")
-                  .attr("transform", "translate( " + config.padding.left + ", " + (config.padding.top + config.height - 2*config.radius.large) + ")");
-
-  // Add x-axis
-  xAxis.append("g")
-        .attr("class", "axis")
-        .each(function(p) {
-          d3.select(this)
-            .transition()
-              .duration(config.transition.duration)
-            .call(self.axis.scale(self.x[p]));
-        });
-
-  // Add x-axis title
-  xAxis.append("text")
-        .attr("class", "axisLabel")
-        .attr("x", config.width)
-        .attr("dy", "-0.20em")
-        .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
-
-  // Add a group element for y-axis
-  var yAxis = svg.selectAll(".y-axis")
-                .data(d3.keys(self.dimensions.y))
-                .enter().append("g")
-                  .attr("class", "dimension")
-                  .attr("transform", "translate( " + config.padding.left + ", " + (config.padding.top - 2*config.radius.large) + ")");
-
-  // Add y-axis
-  yAxis.append("g")
-        .attr("class", "axis")
-        .each(function(p) {
-          d3.select(this)
-            .transition()
-              .duration(config.transition.duration)
-            .call(self.axis.orient("left").scale(self.y[p]));
-        });
-
-  // Add y-axis title
-  yAxis.append("text")
-        .attr("class", "axisLabel")
-        .attr("transform", "rotate(-90)")
-        .attr("dy", "1.00em")
-        .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
 
   // Add g element for each data series
   var series = svg.selectAll(".g-series")
