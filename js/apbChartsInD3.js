@@ -82,7 +82,6 @@ BaseChart.prototype.setWidthHeight = function() {
 // Set color range
 BaseChart.prototype.setColorRange = function() {
   this.config.colorScale.range(this.config.colorRange);
-  var self = this;
 }
 
 // Public setters for chart parameters and config
@@ -149,76 +148,6 @@ BaseChart.prototype.addChartContainer = function() {
                 .attr("transform", "translate(" + this.config.margin.left + "," + this.config.margin.top + ")");
 }
 
-// Process chart data
-BaseChart.prototype.processChartData = function () {
-  this.dimensions = {};
-  this.seriesData = [];
-  this.x = {};
-
-  var self = this;
-
-  // Extract xAxis.axes
-  self.config.chartData.xAxis.axes.forEach(function(d, i) {
-    self.dimensions[d.name] = {};
-    self.dimensions[d.name].parameters = d.parameters;
-    self.dimensions[d.name].dataObjects = [];
-    self.dimensions[d.name].calcs = {};
-  })
-
-  // Extract series.data
-  var indexArray = [];
-  self.config.chartData.series.data.forEach(function(d, i) {
-    // Create an array of indexed objects containing series.data
-    indexArray.push(i);
-    var obj = {
-      index:  i,
-      name:   d.name,
-      data:   {}  //populated in next forEach loop
-    };
-
-    // Processs series.data.data
-    d.data.forEach(function(dd, ii) {
-      //cross-reference against xAxis.axes
-      if(self.dimensions[dd.xAxisName] != null) {
-        obj.data[dd.xAxisName] = dd.x;
-
-        var obj2 = {
-          seriesIndex:     i,
-          seriesName:      d.name,
-          axis:            dd.xAxisName,
-          value:           dd.x
-        };
-        self.dimensions[dd.xAxisName].dataObjects.push(obj2);
-      }
-    });
-    self.seriesData.push(obj);
-  });
-
-  // Map colors to series.data index
-  this.config.colorScale.domain(indexArray);
-
-  // Calculate axes domains
-  for(var axis in self.dimensions) {
-    // Set floorXpx to 0
-    self.dimensions[axis].calcs.floorXpx = 0;
-
-    // Compute extent from data and incorporate min and max parameters
-    self.dimensions[axis].calcs.origExtent = d3.extent(self.dimensions[axis].dataObjects.map(function(d){ return d.value; }));
-    self.dimensions[axis].calcs.origExtent[0] = d3.min([self.dimensions[axis].calcs.origExtent[0], self.dimensions[axis].parameters.min]);
-    self.dimensions[axis].calcs.origExtent[1] = d3.max([self.dimensions[axis].calcs.origExtent[1], self.dimensions[axis].parameters.max]);
-
-    // X-scales for each dimension
-    self.x[axis] = d3.scale.linear()
-                      .range([self.dimensions[axis].calcs.floorXpx, self.config.width])
-                      .domain(self.dimensions[axis].calcs.origExtent);
-  };
-
-  // Y-scale for X-axes placement
-  self.y = d3.scale.ordinal()
-              .rangePoints([0, self.config.height], self.config.ordinalPadding)
-              .domain(d3.keys(self.dimensions));
-}
-
 // Adds chart title
 BaseChart.prototype.addChartTitle = function() {
   // Extract chart title
@@ -239,7 +168,7 @@ BaseChart.prototype.addChartLegend = function() {
                   .attr("class", "legend")
                   .attr("transform","translate (" + (this.config.padding.left + this.config.width - this.config.radius.large) + ", " + (this.config.padding.top + this.config.height + this.config.radius.large) + ")")
                   .selectAll(".legendItems")
-                    .data(self.seriesData)
+                    .data(d3.keys(self.seriesData))
                   .enter().append("g")
                     .attr("class", "legendItems");
 
@@ -248,7 +177,7 @@ BaseChart.prototype.addChartLegend = function() {
               .attr("r", self.config.radius.normal)
               .attr("cx", self.config.radius.large)
               .attr("cy", function(d, i) { return self.config.legendSpacing * i; })
-              .style("fill", function(d) { return self.config.colorScale(d.index); })
+              .style("fill", function(d) { return self.config.colorScale(d); })
               //animated items
               .style({"stroke": self.config.baseColor,
                       "fill-opacity": self.config.opacity.start,
@@ -256,13 +185,13 @@ BaseChart.prototype.addChartLegend = function() {
                 .transition()
                   .delay(function(d, i) { return i * self.config.transition.delay; })
                   .duration(self.config.transition.duration)
-                .style({"stroke": function(d) { return self.config.colorScale(d.index); },
+                .style({"stroke": function(d) { return self.config.colorScale(d); },
                         "fill-opacity": self.config.opacity.end})
                 .each("end", function() { d3.select(this).style("pointer-events", null); });
 
   this.legend.append("text")
               .attr("class","legendLabel")
-              .text(F('name'))
+              .text(function(d) { return self.seriesData[d].name;})
               .attr("y", function(d, i) { return self.config.legendSpacing * i; })
               .attr("x", -0.5 * self.config.radius.large)
               .attr("dy", "0.35em")
@@ -273,7 +202,7 @@ BaseChart.prototype.addChartLegend = function() {
                 .each("end", function() { d3.select(this).style("pointer-events", null); });
 }
 
-// Adds data labels.
+// Adds data labels
 BaseChart.prototype.addLabel = function(elem) {
   var self = this;
   elem.append("text")
@@ -283,19 +212,17 @@ BaseChart.prototype.addLabel = function(elem) {
       .classed("activeText", true);
 }
 
-// Returns number of axis ticks based on chart width.
+// Returns number of axis ticks based on chart width
 BaseChart.prototype.tickCount = function() {
   return (this.config.width > this.config.ticks.widthCutoff) ? this.config.ticks.upper : this.config.ticks.lower;
 }
 
-// Adds reset button to chart div
+// Adds reset button to chart
 BaseChart.prototype.addResetBtn = function() {
     this.resetBtn = this.config.chart.append("input")
                       .attr("type","button")
                       .attr("value", "Reset")
                       .attr("class", "reset-btn btn btn-sm");
-
-    return this.resetBtn;
 }
 
 // Set button display styles
@@ -317,6 +244,153 @@ BaseChart.prototype.destroyChart = function() {
   d3.select(window).on("resize" + "." + self.config.chartParent, null); //remove resize listener for this chart from 'window'
 }
 
+// Process chart data
+BaseChart.prototype.processChartData = function () {
+  this.dimensions = {};
+  this.seriesData = {};
+  this.x = {};
+
+  var self = this;
+
+  // Extract xAxis.axes
+  if(self.config.chartData.xAxis != null) {
+      self.dimensions.x = {};
+      self.config.chartData.xAxis.axes.forEach(function(d, i) {
+        self.dimensions.x[d.name] = {};
+        self.dimensions.x[d.name].type = "x";
+        self.dimensions.x[d.name].parameters = d.parameters;
+        self.dimensions.x[d.name].dataObjects = [];
+        self.dimensions.x[d.name].calcs = {};
+        self.dimensions.x[d.name].calcs.floorXpx = 0; // Set floorXpx to 0
+        self.x[d.name] = d3.scale.linear().range([self.dimensions.x[d.name].calcs.floorXpx, self.config.width]);
+      })
+  }
+
+  // If provided multiple x-axes, ignore yAxis inputs and compute y-axis as an ordinal scale for vertical placement of x-axes
+  if(d3.keys(self.dimensions.x).length > 1) {
+      // Y-scale becomes an ordinal scale for x-axes vertical spacing
+      self.y = d3.scale.ordinal()
+                  .rangePoints([0, self.config.height], self.config.ordinalPadding)
+                  .domain(d3.keys(self.dimensions.x));
+  // Otherwise, extract y-axes and add to dimensions
+  } else {
+    // Extract yAxis.axes
+    if(self.config.chartData.yAxis != null) {
+        self.dimensions.y = {};
+        this.y = {};
+        self.config.chartData.yAxis.axes.forEach(function(d, i) {
+          self.dimensions.y[d.name] = {};
+          self.dimensions.y[d.name].type = "y";
+          self.dimensions.y[d.name].parameters = d.parameters;
+          self.dimensions.y[d.name].dataObjects = [];
+          self.dimensions.y[d.name].calcs = {};
+          self.y[d.name] = d3.scale.linear().range([self.config.height, 0]);
+        })
+    }
+  }
+
+  // Extract series.data
+  self.config.chartData.series.data.forEach(function(d, i) {
+
+    self.seriesData[i] = {};    // 'i' serves as unique index for seriesData
+    self.seriesData[i].name = d.name;
+    self.seriesData[i].dataObjects = [];
+
+    // Processs series.data.data
+    d.data.forEach(function(dd, ii) {
+      // Check if xAxisName property is defined
+      if(dd.xAxisName != null) {
+        // Cross-reference against xAxis.axes
+        if(self.dimensions.x[dd.xAxisName] != null) {
+          var obj = {
+            seriesIndex:     i,
+            seriesName:      d.name,
+            axisName:        dd.xAxisName,
+            value:           dd.x
+          };
+          self.seriesData[i].dataObjects.push(obj);
+          self.dimensions.x[dd.xAxisName].dataObjects.push(obj);
+        }
+      // Check if x and y values are defined
+      } else if((dd.x != null) && (dd.y != null)) {
+        // Check that only one x- and y-axis is defined
+        if((d3.keys(self.dimensions.x).length === 1) && (d3.keys(self.dimensions.y).length === 1)) {
+          var xAxisName = d3.keys(self.dimensions.x)[0];
+          var yAxisName = d3.keys(self.dimensions.y)[0];
+
+          var obj = {
+            seriesIndex:      i,
+            seriesName:       d.name,
+            xValue:           dd.x,
+            xAxisName:        xAxisName,
+            yValue:           dd.y,
+            yAxisName:        yAxisName
+          };
+          self.seriesData[i].dataObjects.push(obj);
+
+          var objX = {
+            seriesIndex:     i,
+            seriesName:      d.name,
+            axisName:        xAxisName,
+            value:           dd.x
+          };
+          self.dimensions.x[xAxisName].dataObjects.push(objX);
+
+          var objY = {
+            seriesIndex:     i,
+            seriesName:      d.name,
+            axisName:        yAxisName,
+            value:           dd.y
+          };
+          self.dimensions.y[yAxisName].dataObjects.push(objY);
+        }
+      }
+    });
+  });
+
+  // Map colors to series.data index
+  this.config.colorScale.domain(d3.keys(self.seriesData));
+
+  // Calculate axes domains
+  for(var axisType in self.dimensions) {
+    for(var axis in self.dimensions[axisType]) {
+      // Compute extent from data
+      self.dimensions[axisType][axis].calcs.origExtent = d3.extent(self.dimensions[axisType][axis].dataObjects.map(function(d){ return d.value; }));
+      // Incorporate min parameter
+      self.dimensions[axisType][axis].calcs.origExtent[0] = d3.min([self.dimensions[axisType][axis].calcs.origExtent[0], self.dimensions[axisType][axis].parameters.min]);
+      // Incorporate max parameter
+      self.dimensions[axisType][axis].calcs.origExtent[1] = d3.max([self.dimensions[axisType][axis].calcs.origExtent[1], self.dimensions[axisType][axis].parameters.max]);
+
+      // Set domains
+      var extent = self.dimensions[axisType][axis].calcs.origExtent;
+      if(axisType === "x") {
+          self.x[axis].domain(extent);
+      } else if (axisType === "y") {
+          self.y[axis].domain(extent);
+      }
+    }
+  };
+}
+
+// Parent draw function to generate basic chart layout
+BaseChart.prototype.draw = function() {
+  // Create SVG to house chart
+  this.addChartContainer();
+
+  // Add reset button and hide
+  this.addResetBtn();
+  this.setBtnDisplay(this.resetBtn, false);
+
+  // Add chart title
+  this.addChartTitle();
+
+  // Process chart data and create x/y scales
+  this.processChartData();
+
+  // Add legend
+  this.addChartLegend();
+}
+
 
 /* RulerChart */
 
@@ -332,40 +406,28 @@ RulerChart.inheritsFrom(BaseChart);
 // RulerChart's draw function
 RulerChart.prototype.draw = function() {
 
-  // Get chart config
+  // Call parent draw function for basic chart layout
+  this.parent.draw.call(this);
+
+  // Set convenience variables
   var config = this.getConfig();
-
-  // Create SVG to house chart
-  this.addChartContainer();
   var svg = this.svg;
+  var resetBtn = this.resetBtn;
 
-  // Add reset button and hide
-  var resetBtn = this.addResetBtn();
-  this.setBtnDisplay(resetBtn, false);
-
-  // Add chart title
-  this.addChartTitle();
-
-  // Process chart data and create x/y scales
-  this.processChartData();
-
-  // Add legend.
-  this.addChartLegend();
-
-  // Carry RulerChart 'this' context in 'self'
+  // Carry 'this' context in 'self'
   var self = this;
 
-  // Add a group element for each dimension.
-  self.g = svg.selectAll(".dimension")
-                .data(d3.keys(self.dimensions))
-                .enter().append("g")
-                  .attr("class", "dimension")
-                  .attr("transform", function(p) {
-                    return "translate( " + config.padding.left + ", " + (config.padding.top + self.y(p)) + ")";
-                  });
+  // Add a group element for each x-axis
+  var xAxes = svg.selectAll(".dimension")
+                  .data(d3.keys(self.dimensions.x))
+                  .enter().append("g")
+                    .attr("class", "dimension")
+                    .attr("transform", function(p) {
+                      return "translate( " + config.padding.left + ", " + (config.padding.top + self.y(p)) + ")";
+                    });
 
-  // Add axes.
-  self.g.append("g")
+  // Add x-axes
+  xAxes.append("g")
         .attr("class", "axis")
         .each(function(p) {
           d3.select(this)
@@ -374,16 +436,16 @@ RulerChart.prototype.draw = function() {
             .call(self.axis.scale(self.x[p]));
         });
 
-  // Add titles.
-  self.g.append("text")
+  // Add x-axis titles
+  xAxes.append("text")
         .attr("class", "axisLabel")
         .attr("x", -1 * config.radius.large)
-        .text(function(p) { return self.dimensions[p].parameters.displayName; });
+        .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
 
-  // Add and animate circles on each dimension.
-  self.g.each(function(p) {
+  // Add circles to x-axis dimensions
+  xAxes.each(function(p) {
     d3.select(this).selectAll(".g-circle")
-      .data(self.dimensions[p].dataObjects)
+      .data(self.dimensions.x[p].dataObjects)
     .enter().append("g")
       .attr("class", "g-circle")
       .attr("transform", "translate(0, 0)")
@@ -411,7 +473,7 @@ RulerChart.prototype.draw = function() {
       .each("end", function() { d3.select(this).style("pointer-events", null); });
   });
 
-  // Add listeners to circles.
+  // Add listeners to circles
   svg.selectAll(".g-circle")
       .on("mouseover", function(d) {
           // Increase circle radius
@@ -424,14 +486,14 @@ RulerChart.prototype.draw = function() {
           d3.select(this.parentNode).select(".axisLabel").classed("activeText", true);
 
           // Highlight legend.
-          self.legend.filter(function(p) { return p.index === d.seriesIndex; })
+          self.legend.filter(function(p) { return +p === +d.seriesIndex; })
               .each(function(p) {
                 d3.select(this).select(".legendCircle").attr("r", config.radius.large);
                 d3.select(this).select(".legendLabel").classed("activeText", true);
               });
 
           // Add line connecting dimensions.
-          self.drawLine(d.seriesIndex);
+          self.drawLine(+d.seriesIndex);
         })
       .on("mouseout", function() {
           // Unanimate circle radius.
@@ -458,16 +520,16 @@ RulerChart.prototype.draw = function() {
           self.removeSelection(".dataLabels");
 
           // Recompute x axis domains, centering on data value of clicked circle.
-          self.recenterDomains(d.seriesIndex);
+          self.recenterDomains(+d.seriesIndex);
 
           // Transition clicked circle instantaneously to avoid conflicts with listeners.
-          d3.select(this).attr("transform", "translate(" + self.x[d.axis](d.value) + "," + 0 + ")");
+          d3.select(this).attr("transform", "translate(" + self.x[d.axisName](d.value) + "," + 0 + ")");
 
           // Re-draw and animate x axes and circles using new domains.
           self.reScale();
 
           // Animate lines.
-          self.centerMainLine(d.seriesIndex);
+          self.centerMainLine(+d.seriesIndex);
 
           // Unhighlight legend and axis labels.
           self.legend.selectAll(".legendLabel").classed("activeText", false);
@@ -477,7 +539,7 @@ RulerChart.prototype.draw = function() {
           self.setBtnDisplay(resetBtn, true);
       });
 
-  // Add listeners to legend.
+  // Add listeners to legend
   svg.selectAll(".legendItems")
       .on("mouseover", function(p) {
           // Highlight legend.
@@ -486,7 +548,7 @@ RulerChart.prototype.draw = function() {
 
           // Animate circles for matching portfolio and add labels.
           svg.selectAll(".g-circle")
-            .filter(function(d) { return d.seriesIndex === p.index; })
+            .filter(function(d) { return +d.seriesIndex === +p; })
             .each(function(d) {
               d3.select(this).select(".circle").attr("r", config.radius.large);
               self.addLabel(d3.select(this));
@@ -496,7 +558,7 @@ RulerChart.prototype.draw = function() {
           svg.selectAll(".axisLabel").classed("activeText", true);
 
           // Add line.
-          self.drawLine(p.index);
+          self.drawLine(+p);
       })
       .on("mouseout", function() {
           // Unhighlight legend.
@@ -521,19 +583,19 @@ RulerChart.prototype.draw = function() {
           self.removeSelection(".dataLabels");
 
           // Recompute x axis domains, centering on data value of clicked circle.
-          self.recenterDomains(p.index);
+          self.recenterDomains(+p);
 
           // Re-draw and animate x axes and circles using new domains.
           self.reScale();
 
           // Animate lines.
-          self.centerMainLine(p.index);
+          self.centerMainLine(+p);
 
           // Display reset button.
           self.setBtnDisplay(resetBtn, true);
       });
 
-  // Reset chart to original scale on button click.
+  // Reset chart to original scale on button click
   resetBtn.on("click", function() {
       // Hide reset button.
       self.setBtnDisplay(resetBtn, false);
@@ -544,9 +606,9 @@ RulerChart.prototype.draw = function() {
       self.removeSelection(".dataLabels");
 
       // Reset x axis domain to original extent.
-      d3.keys(self.dimensions).map(function(p) {
-        self.dimensions[p].calcs.floorXpx = 0;
-        self.x[p].range([self.dimensions[p].calcs.floorXpx, config.width]).domain(self.dimensions[p].calcs.origExtent);
+      d3.keys(self.dimensions.x).map(function(p) {
+        self.dimensions.x[p].calcs.floorXpx = 0;
+        self.x[p].range([self.dimensions.x[p].calcs.floorXpx, config.width]).domain(self.dimensions.x[p].calcs.origExtent);
       });
 
       // Re-draw and animate x axes and circles using new domains.
@@ -559,7 +621,7 @@ RulerChart.prototype.draw = function() {
   d3.select(window).on("resize" + "." + self.config.chartParent, function() { self.reSize(); });
 }
 
-// Draws path across dimensions.
+// Draws path across dimensions
 RulerChart.prototype.drawLine = function(d) {
   var self = this;
   self.svg.append("path")
@@ -570,51 +632,56 @@ RulerChart.prototype.drawLine = function(d) {
     .style("stroke", self.config.colorScale(d));
 }
 
-// Returns the path for a given data point.
+// Returns the path for a given data point
 RulerChart.prototype.path = function(d) {
-    var self = this;
-    var series = self.seriesData.filter(function(dd){ return dd.index === d;})[0].data;
-    return self.line(d3.keys(self.dimensions).map(function(p) { return [self.x[p](series[p]), self.y(p)]; }));
+  var self = this;
+  return self.line(d3.keys(self.dimensions.x).map(function(p) {
+                return [self.x[p](self.seriesData[d].dataObjects.filter(function(dd) { return dd.axisName === p; })[0].value), self.y(p)];
+          }));
 }
 
-// Sets main line class.
+// Sets main line class
 RulerChart.prototype.setMainLine = function() {
   this.svg.select(".line.main").remove();
   this.svg.select(".line").attr("class", "line main");
 }
 
-// Removes all lines except the main line.
+// Removes all lines except the main line
 RulerChart.prototype.removeLines = function() {
     this.svg.selectAll(".line")
       .filter(function() { return d3.select(this).attr("class") != "line main"; })
       .remove();
 }
 
-// Recomputes domains, centering on passed data.
+// Recomputes domains, centering on passed data
 RulerChart.prototype.recenterDomains = function(d) {
   var minMax, centerVal, distFromCenter, maxDistFromCenter;
   var self = this;
-  d3.keys(this.dimensions).map(function(p) {
-      self.dimensions[p].calcs.floorXpx = 0;
-      self.x[p].range([self.dimensions[p].calcs.floorXpx, self.config.width]).domain(self.dimensions[p].calcs.origExtent);
-      minMax = self.x[p].domain();
 
-      centerVal = self.seriesData.filter(function(dd){ return dd.index === d;})[0].data[p];
+  d3.keys(self.dimensions.x).map(function(p) {
+      // Reset scale to original state
+      self.dimensions.x[p].calcs.floorXpx = 0;
+      self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]).domain(self.dimensions.x[p].calcs.origExtent);
+
+      // Recompute scale, centering on selected series
+      minMax = self.x[p].domain();
+      centerVal = self.seriesData[d].dataObjects.filter(function(dd) { return dd.axisName === p; })[0].value;
       distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
       maxDistFromCenter = d3.max(distFromCenter);
       self.x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
 
-      if((centerVal - maxDistFromCenter) < self.dimensions[p].parameters.floor) {
-        self.dimensions[p].calcs.floorXpx = self.x[p](self.dimensions[p].parameters.floor);
-        self.x[p].range([self.dimensions[p].calcs.floorXpx, self.config.width]).domain([self.dimensions[p].parameters.floor, centerVal + maxDistFromCenter]);
+      // Adjust for axis floor parameter
+      if((centerVal - maxDistFromCenter) < self.dimensions.x[p].parameters.floor) {
+        self.dimensions.x[p].calcs.floorXpx = self.x[p](self.dimensions.x[p].parameters.floor);
+        self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]).domain([self.dimensions.x[p].parameters.floor, centerVal + maxDistFromCenter]);
       }
   });
 }
 
-// Redraws axes and circles.
+// Redraws axes and circles
 RulerChart.prototype.reScale = function() {
   var self = this;
-  self.g.each(function(p) {
+  self.svg.selectAll(".dimension").each(function(p) {
     d3.select(this).selectAll(".axis")
       .transition()
         .duration(self.config.transition.durationShort)
@@ -629,7 +696,7 @@ RulerChart.prototype.reScale = function() {
   });
 }
 
-// Centers the main line.
+// Centers the main line
 RulerChart.prototype.centerMainLine = function(d) {
   var self = this;
   this.svg.select(".line.main")
@@ -638,7 +705,7 @@ RulerChart.prototype.centerMainLine = function(d) {
     .attr("d", self.path(d));
 }
 
-// Resizes chart.
+// Resizes chart
 RulerChart.prototype.reSize = function() {
   var self = this;
 
@@ -656,10 +723,10 @@ RulerChart.prototype.reSize = function() {
 
   // Update x and y ranges.
   self.y.rangePoints([0, self.config.height], self.config.ordinalPadding);
-  d3.keys(self.dimensions).map(function(p) { self.x[p].range([self.dimensions[p].calcs.floorXpx, self.config.width]); });
+  d3.keys(self.dimensions.x).map(function(p) { self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
 
   // Update dimension related elements
-  this.g.each(function(p) {
+  this.svg.selectAll(".dimension").each(function(p) {
     // Update y spacing.
     d3.select(this)
       .attr("transform", function(p) { return "translate( " + self.config.padding.left + ", " + (self.config.padding.top + self.y(p)) + ")" });
@@ -696,23 +763,99 @@ ScatterPlot.inheritsFrom(BaseChart);
 // RulerChart's draw function
 ScatterPlot.prototype.draw = function() {
 
-  // Get chart config
+  // Call parent draw function for basic chart layout
+  this.parent.draw.call(this);
+
+  // Set convenience variables
   var config = this.getConfig();
-
-  // Create SVG to house chart
-  this.addChartContainer();
   var svg = this.svg;
+  var resetBtn = this.resetBtn;
 
-  // Add reset button and hide
-  var resetBtn = this.addResetBtn();
-  this.setBtnDisplay(resetBtn, false);
-
-  // Process chart data and create x/y scales
-  // this.processChartData();
-
-  // Add chart title
-  this.addChartTitle();
-
-  // Carry RulerChart 'this' context in 'self'
+  // Carry 'this' context in 'self'
   var self = this;
+
+  // Add a group element for x-axis
+  var xAxis = svg.selectAll(".x-axis")
+                .data(d3.keys(self.dimensions.x))
+                .enter().append("g")
+                  .attr("class", "dimension")
+                  .attr("transform", "translate( " + config.padding.left + ", " + (config.padding.top + config.height - 2*config.radius.large) + ")");
+
+  // Add x-axis
+  xAxis.append("g")
+        .attr("class", "axis")
+        .each(function(p) {
+          d3.select(this)
+            .transition()
+              .duration(config.transition.duration)
+            .call(self.axis.scale(self.x[p]));
+        });
+
+  // Add x-axis title
+  xAxis.append("text")
+        .attr("class", "axisLabel")
+        .attr("x", config.width)
+        .attr("dy", "-0.20em")
+        .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
+
+  // Add a group element for y-axis
+  var yAxis = svg.selectAll(".y-axis")
+                .data(d3.keys(self.dimensions.y))
+                .enter().append("g")
+                  .attr("class", "dimension")
+                  .attr("transform", "translate( " + config.padding.left + ", " + (config.padding.top - 2*config.radius.large) + ")");
+
+  // Add y-axis
+  yAxis.append("g")
+        .attr("class", "axis")
+        .each(function(p) {
+          d3.select(this)
+            .transition()
+              .duration(config.transition.duration)
+            .call(self.axis.orient("left").scale(self.y[p]));
+        });
+
+  // Add y-axis title
+  yAxis.append("text")
+        .attr("class", "axisLabel")
+        .attr("transform", "rotate(-90)")
+        .attr("dy", "1.00em")
+        .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
+
+  // Add g element for each data series
+  var series = svg.selectAll(".g-series")
+                  .data(d3.keys(self.seriesData))
+                .enter().append("g")
+                  .attr("class", "g-series")
+                  .attr("transform", "translate( " + config.padding.left + ", " + (config.padding.top + config.height - 2*config.radius.large) + ")");
+
+  // Add circles
+  series.each(function(p) {
+      d3.select(this).selectAll(".g-circle")
+          .data(self.seriesData[p].dataObjects)
+        .enter().append("g")
+          .attr("class", "g-circle")
+            .append("circle")
+            .attr("class", "circle")
+            .attr("r", config.radius.normal)
+            .attr("cx", 0)
+            .style({"stroke": config.baseColor,
+                    "fill-opacity": config.opacity.start,
+                    "fill": function(d) { return config.colorScale(d.seriesIndex); },
+                    "pointer-events": "none"});
+
+      d3.select(this).selectAll(".g-circle")
+        .transition()
+          .delay(function(d, i) { return i * config.transition.delay; })
+          .duration(config.transition.duration)
+        .attr("transform", function(d) { return "translate(" + self.x[d.xAxisName](d.xValue) + "," + (self.y[d.yAxisName](d.yValue) - config.height) + ")"; });
+
+      d3.select(this).selectAll(".circle")
+        .transition()
+          .delay(function(d, i) { return i * config.transition.delay; })
+          .duration(config.transition.duration)
+        .style({"stroke": function(d) { return config.colorScale(d.seriesIndex); },
+                "fill-opacity": config.opacity.end})
+        .each("end", function() { d3.select(this).style("pointer-events", null); });
+    });
 }

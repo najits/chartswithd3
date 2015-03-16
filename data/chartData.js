@@ -30,7 +30,7 @@ var rulerChartData1 = {
                 name: "risk_total",
                 parameters: {
                     min: 0,
-                    max: 15,
+                    max: 12,
                     floor: 0,
                     displayName: "Total Risk"
                 }
@@ -374,11 +374,15 @@ var scatterPlotData1 = {
         placeholder: "For Global series properties",
             data: [
             {
-                name: "GIC Tactical Asset Allocation Model 6",
+                name: "Portfolio Awesome",
                 data: [
                     {
-                        x: 12.463279194068054,
+                        x: 17.463279194068054,
                         y: 2.20001683726
+                    },
+                    {
+                        x: 7.463279194068054,
+                        y: 4
                     }
                 ]
             },
