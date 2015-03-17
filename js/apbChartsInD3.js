@@ -45,7 +45,7 @@ BaseChart.prototype.setToDefaultParams = function() {
     padding:              {left: 100, right: 50, top: 50, bottom: 100},
     ordinalPadding:       0.5,
     legendSpacing:        18,
-    dy:                   {legend: "0.35em", xAxis: "-0.20em", yAxis: "1.00em"},
+    dy:                   {middle: "0.35em", top: "0.71em", xAxisLabel: "-0.20em", yAxisLabel: "1.00em"},
     // Color and opacity
     colorRange:           ["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"],
     baseColor:            "#EBEBEB",
@@ -76,8 +76,8 @@ BaseChart.prototype.setWidthHeight = function() {
   this.config.width = this.config.outerWidth - this.config.margin.left - this.config.margin.right - this.config.padding.left - this.config.padding.right;
   this.config.height = this.config.outerHeight - this.config.margin.top - this.config.margin.bottom - this.config.padding.top - this.config.padding.bottom;
 
-  this.config.axisPlacement.x = this.config.height - (2 * this.config.radius.large);
-  this.config.axisPlacement.y = -2 * this.config.radius.large;
+  this.config.axisPlacement.x = this.config.height - (2.5 * this.config.radius.large);
+  this.config.axisPlacement.y = -2.5 * this.config.radius.large;
 
   // Set x-axis tick count
   this.axis.ticks(this.tickCount());
@@ -161,9 +161,10 @@ BaseChart.prototype.addChartTitle = function() {
 
   this.svg.append("g")
         .attr("class", "chartTitle")
-        .attr("transform","translate( " + (this.config.padding.left + this.config.width + this.config.padding.right) / 2 + ", " + (this.config.padding.top / 2) + ")")
+        .attr("transform","translate( " + (this.config.padding.left + this.config.width + this.config.padding.right) / 2 + ", " + 0 + ")")
         .append("text")
-        .text(this.chartTitle);
+        .text(this.chartTitle)
+        .attr("dy", this.config.dy.top);
 }
 
 // Adds chart legend
@@ -200,7 +201,7 @@ BaseChart.prototype.addChartLegend = function() {
               .text(function(d) { return self.seriesData[d].name;})
               .attr("y", function(d, i) { return self.config.legendSpacing * i; })
               .attr("x", -0.5 * self.config.radius.large)
-              .attr("dy", self.config.dy.legend)
+              .attr("dy", self.config.dy.middle)
               .style("pointer-events", "none")
                 .transition()
                   .delay(function(d, i) { return i * self.config.transition.delay; })
@@ -246,7 +247,7 @@ BaseChart.prototype.removeSelection = function(elem) { this.config.chart.selectA
 // Destroy all chart elements
 BaseChart.prototype.destroyChart = function() {
   var self = this;
-  this.removeSelection("*");
+  self.removeSelection("*");
   d3.select(window).on("resize" + "." + self.config.chartParent, null); //remove resize listener for this chart from 'window'
 }
 
@@ -380,13 +381,13 @@ BaseChart.prototype.processChartData = function () {
 }
 
 // Adds x and y axes
-BaseChart.prototype.addChartAxes = function () {
+BaseChart.prototype.addChartAxes = function() {
   var self = this;
 
   // Process x axes
   if(d3.keys(self.dimensions.x).length > 0) {
       // Add a group element for each x-axis
-      self.xAxes = self.svg.selectAll(".dimension")
+      self.xAxes = self.svg.selectAll(".x-axis")
                         .data(d3.keys(self.dimensions.x))
                         .enter().append("g")
                           .attr("class", "dimension")
@@ -401,7 +402,7 @@ BaseChart.prototype.addChartAxes = function () {
                   d3.select(this)
                     .transition()
                       .duration(self.config.transition.duration)
-                    .call(self.axis.scale(self.x[p]));
+                    .call(self.axis.orient("bottom").scale(self.x[p]));
                 });
 
       var axisLabel = self.xAxes.append("text")
@@ -413,7 +414,7 @@ BaseChart.prototype.addChartAxes = function () {
         axisLabel.attr("x", -1 * self.config.radius.large);
       } else {
         axisLabel.attr("x", self.config.width)
-                 .attr("dy", self.config.dy.xAxis);
+                 .attr("dy", self.config.dy.xAxisLabel);
       }
     }
 
@@ -440,7 +441,7 @@ BaseChart.prototype.addChartAxes = function () {
     self.yAxis.append("text")
               .attr("class", "axisLabel")
               .attr("transform", "rotate(-90)")
-              .attr("dy", self.config.dy.yAxis)
+              .attr("dy", self.config.dy.yAxisLabel)
               .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
   }
 }

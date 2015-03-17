@@ -346,12 +346,12 @@ var scatterPlotData1 = {
         placeholder: "For Global x-Axis properties",
             axes: [
             {
-                name: "risk_total",
+                name: "risk_fi",
                 parameters: {
                     min: 0,
-                    max: 15,
+                    max: 20,
                     floor: 0,
-                    displayName: "Total Risk"
+                    displayName: "FI Risk"
                 }
             }
         ]
@@ -401,6 +401,105 @@ var scatterPlotData1 = {
                     {
                         x: 6.2706826905590605,
                         y: 3.00435302271
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 70/30",
+                data: [
+                    {
+                        x: 10.528992636646464,
+                        y: 2.61565915641
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 90/10",
+                data: [
+                    {
+                        x: 13.363294601069397,
+                        y: 2.2660096221
+                    }
+                ]
+            }
+        ]
+    }
+};
+
+var scatterPlotData2 = {
+    chart: {
+        title: {
+            text: "Scatter Plot of Income Yield vs. Total Risk 2"
+        },
+        placeholder: "For chart level options"
+    },
+    xAxis: {
+        placeholder: "For Global x-Axis properties",
+            axes: [
+            {
+                name: "risk_total",
+                parameters: {
+                    min: 0,
+                    max: 15,
+                    floor: 0,
+                    displayName: "Total Risk"
+                }
+            }
+        ]
+    },
+    yAxis: {
+        placeholder: "For Global y-Axis properties",
+            axes: [
+            {
+                name: "oad",
+                parameters: {
+                    min: 0,
+                    max: 5,
+                    floor: 0,
+                    displayName: "Duration"
+                }
+            }
+        ]
+    },
+    series: {
+        placeholder: "For Global series properties",
+            data: [
+            {
+                name: "Portfolio More Awesome",
+                data: [
+                    {
+                        x: 2.463279194068054,
+                        y: 3.20001683726
+                    },
+                    {
+                        x: 6.463279194068054,
+                        y: 1.22
+                    }
+                ]
+            },
+            {
+                name: "Medium Quality and Dividend",
+                data: [
+                    {
+                        x: 14.069455231422165,
+                        y: 2.2424999999999997
+                    }
+                ]
+            },
+            {
+                name: "Long-Term Allocation ETF 40/60",
+                data: [
+                    {
+                        x: 6.2706826905590605,
+                        y: 3.00435302271
+                    },
+                    {
+                        x: 3.00435302271,
+                        y: 3.00435302271
+                    },
+                    {
+                        x: 14.22,
+                        y: 2.2
                     }
                 ]
             },
