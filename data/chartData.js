@@ -377,12 +377,12 @@ var scatterPlotData1 = {
                 name: "Portfolio Awesome",
                 data: [
                     {
-                        x: 17.463279194068054,
-                        y: 2.20001683726
+                        x: 15,
+                        y: 0
                     },
                     {
                         x: 7.463279194068054,
-                        y: 4
+                        y: 5
                     }
                 ]
             },
@@ -440,7 +440,7 @@ var scatterPlotData2 = {
                 name: "risk_total",
                 parameters: {
                     min: 0,
-                    max: 15,
+                    max: 18,
                     floor: 0,
                     displayName: "Total Risk"
                 }
