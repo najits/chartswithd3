@@ -49,12 +49,6 @@ text {
   text-anchor: end;
 }
 
-div.chart {
-    margin: 0 auto;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
 .reset-btn {
   right: 20px;
   top: 10px;

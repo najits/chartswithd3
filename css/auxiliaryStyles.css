@@ -1,0 +1,13 @@
+div {
+    width: 70%;
+    min-width: 600px;
+    height: 500px;
+    border: 1px solid #CCCCCC;
+    position: relative;
+}
+
+div.chart {
+    margin: 0 auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
