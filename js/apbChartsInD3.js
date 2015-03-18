@@ -274,7 +274,7 @@ BaseChart.prototype.setBtnDisplay = function (btn, v) {
 // Delete specified selection
 BaseChart.prototype.removeSelection = function (elem) {
     this.config.chart.selectAll(elem).remove();
-}
+};
 
 // Destroy all chart elements
 BaseChart.prototype.destroyChart = function () {
@@ -295,7 +295,7 @@ BaseChart.prototype.processChartData = function () {
     // Extract xAxis.axes
     if (self.config.chartData.xAxis != null) {
         self.dimensions.x = {};
-        self.config.chartData.xAxis.axes.forEach(function (d, i) {
+        self.config.chartData.xAxis.axes.forEach(function (d) {
             self.dimensions.x[d.name] = {};
             self.dimensions.x[d.name].type = "x";
             self.dimensions.x[d.name].parameters = d.parameters;
@@ -319,7 +319,7 @@ BaseChart.prototype.processChartData = function () {
         if (self.config.chartData.yAxis != null) {
             self.dimensions.y = {};
             this.y = {};
-            self.config.chartData.yAxis.axes.forEach(function (d, i) {
+            self.config.chartData.yAxis.axes.forEach(function (d) {
                 self.dimensions.y[d.name] = {};
                 self.dimensions.y[d.name].type = "y";
                 self.dimensions.y[d.name].parameters = d.parameters;
@@ -337,7 +337,7 @@ BaseChart.prototype.processChartData = function () {
         self.seriesData[i].dataObjects = [];
 
         // Processs series.data.data
-        d.data.forEach(function (dd, ii) {
+        d.data.forEach(function (dd) {
             // Check if xAxisName property is defined
             if (dd.xAxisName != null) {
                 // Cross-reference against xAxis.axes
@@ -601,7 +601,7 @@ RulerChart.prototype.draw = function () {
             self.legend.filter(function (p) {
                 return +p === +d.seriesIndex;
             })
-                .each(function (p) {
+                .each(function () {
                     d3.select(this).select(".legendCircle").attr("r", config.radius.large);
                     d3.select(this).select(".legendLabel").classed("activeText", true);
                 });
@@ -665,7 +665,7 @@ RulerChart.prototype.draw = function () {
                 .filter(function (d) {
                     return +d.seriesIndex === +p;
                 })
-                .each(function (d) {
+                .each(function () {
                     d3.select(this).select(".circle").attr("r", config.radius.large);
                     self.addLabel(d3.select(this));
                 });
