@@ -25,6 +25,12 @@ text {
 
 .line {
   fill: none;
+  stroke-width: 0.5;
+  stroke-opacity: 1.0;
+}
+
+.line.origin {
+  stroke: #777;
 }
 
 .circle,

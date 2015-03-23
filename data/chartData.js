@@ -348,9 +348,8 @@ var scatterPlotData1 = {
             {
                 name: "risk_fi",
                 parameters: {
-                    min: 0,
+                    min: -8,
                     max: 20,
-                    floor: 0,
                     displayName: "FI Risk"
                 }
             }
@@ -362,9 +361,8 @@ var scatterPlotData1 = {
             {
                 name: "incomeYield",
                 parameters: {
-                    min: 0,
-                    max: 5,
-                    floor: 0,
+                    min: -5,
+                    max: 8,
                     displayName: "Income Yield"
                 }
             }
@@ -377,12 +375,8 @@ var scatterPlotData1 = {
                 name: "Portfolio Awesome",
                 data: [
                     {
-                        x: 15,
-                        y: 0
-                    },
-                    {
-                        x: 7.463279194068054,
-                        y: 5
+                        x: -3.463279194068054,
+                        y: 2
                     }
                 ]
             },
@@ -390,8 +384,8 @@ var scatterPlotData1 = {
                 name: "High Quality and Dividend",
                 data: [
                     {
-                        x: 14.069455231422165,
-                        y: 2.2424999999999997
+                        x: -4.069455231422165,
+                        y: -1.2424999999999997
                     }
                 ]
             },
@@ -399,7 +393,7 @@ var scatterPlotData1 = {
                 name: "Long-Term Allocation ETF 40/60",
                 data: [
                     {
-                        x: 6.2706826905590605,
+                        x: 5,
                         y: 3.00435302271
                     }
                 ]
@@ -439,7 +433,7 @@ var scatterPlotData2 = {
             {
                 name: "risk_total",
                 parameters: {
-                    min: 0,
+                    min: 2,
                     max: 18,
                     floor: 0,
                     displayName: "Total Risk"
@@ -453,7 +447,7 @@ var scatterPlotData2 = {
             {
                 name: "oad",
                 parameters: {
-                    min: 0,
+                    min: 0.5,
                     max: 5,
                     floor: 0,
                     displayName: "Duration"
