@@ -433,7 +433,7 @@ var scatterPlotData2 = {
             {
                 name: "risk_total",
                 parameters: {
-                    min: 2,
+                    min: 0,
                     max: 18,
                     floor: 0,
                     displayName: "Total Risk"
@@ -447,7 +447,7 @@ var scatterPlotData2 = {
             {
                 name: "oad",
                 parameters: {
-                    min: 0.5,
+                    min: 0,
                     max: 5,
                     floor: 0,
                     displayName: "Duration"
@@ -462,7 +462,7 @@ var scatterPlotData2 = {
                 name: "Portfolio More Awesome",
                 data: [
                     {
-                        x: 2.463279194068054,
+                        x: 0,
                         y: 3.20001683726
                     },
                     {

@@ -1,12 +1,7 @@
-svg {
-  stroke-width: 1.0;
-  stroke-opacity: 0.6;
-}
-
 text {
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
-  fill: #777777;
+  fill: #666666;
 }
 
 .chartTitle text {
@@ -23,25 +18,38 @@ text {
   fill: #555555;
 }
 
-.line {
+.grid {
+  fill: none;
+  stroke: #666666;
+  stroke-width: 0.5;
+}
+
+.dataLine,
+.mainDataLine {
   fill: none;
   stroke-width: 0.5;
   stroke-opacity: 1.0;
 }
 
-.line.origin {
-  stroke: #777;
+.line.originLine,
+.line.mainOriginLine {
+  fill: none;
+  stroke-width: 0.5;
+  stroke-opacity: 1.0;
+  stroke: #666666;
 }
 
 .circle,
 .legendCircle {
   stroke-width: 1.5;
+  stroke-opacity: 0.6;
 }
 
 .axis line,
 .axis path {
   fill: none;
-  stroke: #CCCCCC;
+  stroke: #b3b3b3;
+  stroke-width: 1.75;
   stroke-opacity: 1.0;
   shape-rendering: crispEdges;
 }
