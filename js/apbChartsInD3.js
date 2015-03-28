@@ -1124,9 +1124,8 @@ ScatterPlot.prototype.draw = function() {
 
   // Add origin lines at chart draw for all data points
   // Lines fade and disappear as data points reach final location
-  this.svg.selectAll(".g-circle").each(function(d) {
-    self.drawLineFromOrigin(d, false, true);
   });
+  this.svg.selectAll(".g-circle").each(function(d) { self.drawLineFromOrigin(d, false, true); });
 
   // Add circle at origin
   this.addOriginCircle();
@@ -1240,11 +1239,10 @@ ScatterPlot.prototype.addOriginCircle = function() {
                       .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top + ")");
 
   var self = this;
-
   // Add and place circle at origin
   originCircle.append("circle")
           .attr("class", "circle")
-          .attr("r", self.config.radius.large)
+          .attr("r", self.config.radius.normal-1) // Hack to retain mouseover on centered circle's perimeter
           .style("fill-opacity", 0)
           .attr("transform", function() {
             var x = self.x[d3.keys(self.dimensions.x)[0]](self.xIntercept);
@@ -1377,12 +1375,6 @@ ScatterPlot.prototype.originPath = function(d, extrapolate) {
     xBound = (d.xValue - self.xIntercept >= 0) ? self.x[d.xAxisName].domain()[1] : self.x[d.xAxisName].domain()[0];
     yBound = (d.yValue - self.yIntercept >= 0) ? self.y[d.yAxisName].domain()[1] : self.y[d.yAxisName].domain()[0];
     slope = (d.yValue - self.yIntercept) / (d.xValue - self.xIntercept);
-    yExtrapolate = (slope * (xBound - self.xIntercept)) + self.yIntercept;
-    if(!(Math.abs(yExtrapolate) > Math.abs(yBound))) {
-      array.push([self.x[d.xAxisName](xBound), self.y[d.yAxisName](yExtrapolate)]);
-    } else {
-      xExtrapolate = ((yBound - self.yIntercept) * (1 / slope)) + self.xIntercept;
-      array.push([self.x[d.xAxisName](xExtrapolate), self.y[d.yAxisName](yBound)]);
     }
   }
 

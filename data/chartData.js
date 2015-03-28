@@ -447,7 +447,7 @@ var scatterPlotData2 = {
             {
                 name: "oad",
                 parameters: {
-                    min: 0,
+                    min: 0.5,
                     max: 5,
                     floor: 0,
                     displayName: "Duration"
