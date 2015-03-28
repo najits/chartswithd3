@@ -348,8 +348,8 @@ var scatterPlotData1 = {
             {
                 name: "risk_fi",
                 parameters: {
-                    min: -8,
-                    max: 20,
+                    min: -5,
+                    max: 15,
                     displayName: "FI Risk"
                 }
             }
@@ -361,8 +361,8 @@ var scatterPlotData1 = {
             {
                 name: "incomeYield",
                 parameters: {
-                    min: -5,
-                    max: 8,
+                    min: -2,
+                    max: 5,
                     displayName: "Income Yield"
                 }
             }

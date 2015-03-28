@@ -1,5 +1,6 @@
 text {
   font-family: 'Roboto', sans-serif;
+  font-weight: 400;
   font-size: 14px;
   fill: #666666;
 }
@@ -14,8 +15,12 @@ text {
 }
 
 .activeText {
-  font-weight: bold;
+  font-weight: 700;
   fill: #555555;
+}
+
+.dataLabels {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
 .grid {
