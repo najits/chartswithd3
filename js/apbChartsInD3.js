@@ -1124,7 +1124,6 @@ ScatterPlot.prototype.draw = function() {
 
   // Add origin lines at chart draw for all data points
   // Lines fade and disappear as data points reach final location
-  });
   this.svg.selectAll(".g-circle").each(function(d) { self.drawLineFromOrigin(d, false, true); });
 
   // Add circle at origin
@@ -1363,7 +1362,7 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
 // Returns the path from the origin a given data point
 ScatterPlot.prototype.originPath = function(d, extrapolate) {
   var self = this;
-  var array = [], slope, yExtrapolate, yBound, xExtrapolate, xBound;
+  var array = [], slope, yExtrapolate, yBound, yDelta, xExtrapolate, xBound, xDelta;
 
   // Origin
   array.push([self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)]);
@@ -1372,9 +1371,19 @@ ScatterPlot.prototype.originPath = function(d, extrapolate) {
     // Data point
     array.push([self.x[d.xAxisName](d.xValue), self.y[d.yAxisName](d.yValue)]);
   } else {
-    xBound = (d.xValue - self.xIntercept >= 0) ? self.x[d.xAxisName].domain()[1] : self.x[d.xAxisName].domain()[0];
-    yBound = (d.yValue - self.yIntercept >= 0) ? self.y[d.yAxisName].domain()[1] : self.y[d.yAxisName].domain()[0];
-    slope = (d.yValue - self.yIntercept) / (d.xValue - self.xIntercept);
+    xDelta = d.xValue - self.xIntercept;
+    yDelta = d.yValue - self.yIntercept;
+    xBound = (xDelta >= 0) ? self.x[d.xAxisName].domain()[1] : self.x[d.xAxisName].domain()[0];
+    yBound = (yDelta >= 0) ? self.y[d.yAxisName].domain()[1] : self.y[d.yAxisName].domain()[0];
+    slope = yDelta / xDelta;
+    if(isFinite(slope)) {
+      yExtrapolate = (slope * (xBound - self.xIntercept)) + self.yIntercept;
+      if(((yDelta >= 0) && (yExtrapolate <= yBound)) || ((yDelta < 0) && (yExtrapolate >= yBound))) {
+        array.push([self.x[d.xAxisName](xBound), self.y[d.yAxisName](yExtrapolate)]);
+      } else {
+        xExtrapolate = ((yBound - self.yIntercept) * (1 / slope)) + self.xIntercept;
+        array.push([self.x[d.xAxisName](xExtrapolate), self.y[d.yAxisName](yBound)]);
+      }
     }
   }
 
