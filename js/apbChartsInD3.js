@@ -263,7 +263,7 @@ BaseChart.prototype.addDataLabel = function(d) {
                 d3.select(this).selectAll(".dataLabels.x")
                     .attr("dy", -1 * self.config.dy.xOffset + "em")
                     .attr("dx", self.config.dy.xOffset + "em")
-                    .style("text-anchor", "start");
+                    .style("text-anchor", "middle");
               }
             });
 
@@ -276,7 +276,7 @@ BaseChart.prototype.addDataLabel = function(d) {
                 .attr("class", "dataLabels y")
                 .text(d.yValue.toFixed(2))
                 .attr("y", self.y[p](d.yValue))
-                .attr("dy", (self.config.dy.top + self.config.dy.xOffset) + "em")
+                .attr("dy", self.config.dy.middle + "em")
                 .attr("dx", self.config.dy.xOffset + "em")
                 .style("text-anchor", "start")
                 .classed("activeText", true);
