@@ -47,7 +47,7 @@ text {
 .circle,
 .legendCircle {
   stroke-width: 1.5;
-  stroke-opacity: 0.6;
+  stroke-opacity: 0.8;
 }
 
 .axis line,

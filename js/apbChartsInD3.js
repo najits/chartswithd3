@@ -306,10 +306,12 @@ BaseChart.prototype.addResetBtn = function() {
   this.removeSelection(".reset-btn");
 
   // Add reset button and hide
-  this.resetBtn = this.config.chart.append("input")
+  this.resetBtn = this.config.chart.append("button")
                     .attr("type","button")
                     .attr("value", "Reset")
-                    .attr("class", "reset-btn btn btn-sm");
+                    .attr("class", "reset-btn btn btn-default btn-sm")
+                    .html("Reset");
+
   this.setElemDisplay(".reset-btn", false);
 }
 
