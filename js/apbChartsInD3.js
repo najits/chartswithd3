@@ -53,7 +53,7 @@ BaseChart.prototype.setToDefaultParams = function() {
     // Element sizes
     radius:               {normal: 7, large: 10},
     // Transitions
-    transition:           {duration: 1250, durationShort: 1000, delay: 50},
+    transition:           {duration: 1250, durationShort: 1000, delay: 75},
     // Axis
     ticks:                {widthCutoff: 500, upper: 4, lower: 2}
   };
@@ -622,7 +622,7 @@ BaseChart.prototype.addChartGridLines = function() {
                       .attr("class", "gridlines")
                       .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top +")");
 
-  // Get x-axis ticks, filter out x-intercept and domain ends
+  // Get axes ticks, filter out intercepts and domain ends
   var xAxis = d3.keys(self.dimensions.x)[0];
   var xTicks = self.x[xAxis].ticks(self.tickCount())
                             .filter(function(d) {
@@ -630,6 +630,16 @@ BaseChart.prototype.addChartGridLines = function() {
                                     && (d !== self.x[xAxis].domain()[0])
                                     && (d !== self.x[xAxis].domain()[1]);
                               });
+
+  var yAxis = d3.keys(self.dimensions.y)[0];
+  var yTicks = self.y[yAxis].ticks(self.tickCount())
+                            .filter(function(d) {
+                                return (d !== self.yIntercept)
+                                    && (d !== self.y[yAxis].domain()[0])
+                                    && (d !== self.y[yAxis].domain()[1]);
+                              });
+
+  // Add grid lines
   gridLines.selectAll("line.grid.x")
                 .data(xTicks)
              .enter().append("line")
@@ -639,20 +649,8 @@ BaseChart.prototype.addChartGridLines = function() {
                         "x2": function(d) { return self.x[xAxis](d); },
                         "y1": 0,
                         "y2": self.config.height
-                })
-                .style("stroke-opacity", 0)
-                  .transition()
-                  .delay(self.config.transition.durationShort).duration(self.config.transition.duration)
-                .style("stroke-opacity", self.config.opacity.end);
+                });
 
-  // Get y-axis ticks, filter out y-intercept and domain ends
-  var yAxis = d3.keys(self.dimensions.y)[0];
-  var yTicks = self.y[yAxis].ticks(self.tickCount())
-                            .filter(function(d) {
-                                return (d !== self.yIntercept)
-                                    && (d !== self.y[yAxis].domain()[0])
-                                    && (d !== self.y[yAxis].domain()[1]);
-                              });
   gridLines.selectAll("line.grid.y")
                 .data(yTicks)
              .enter().append("line")
@@ -662,11 +660,15 @@ BaseChart.prototype.addChartGridLines = function() {
                         "x2": self.config.width,
                         "y1": function(d) { return self.y[yAxis](d); },
                         "y2": function(d) { return self.y[yAxis](d); }
-                })
-                .style("stroke-opacity", 0)
-                 .transition()
-                 .delay(self.config.transition.durationShort).duration(self.config.transition.duration)
-                .style("stroke-opacity", self.config.opacity.end);
+                });
+
+  // Animate
+  gridLines.selectAll("line.grid")
+    .style("stroke-opacity", 0)
+     .transition()
+       .delay(self.config.transition.durationShort)
+       .duration(self.config.transition.durationShort)
+    .style("stroke-opacity", self.config.opacity.end);
 }
 
 // Position x-axis labels
@@ -699,33 +701,34 @@ BaseChart.prototype.addChartDataPoints = function() {
         .data(self.seriesData[p].dataObjects)
       .enter().append("g")
         .attr("class", "g-circle")
-        .attr("transform", function(d) {
-            // Position circles at axes; if y-axis is not defined, position at start of x-axis
-            var x = (d.yAxisName != null) ? self.ySpacingInX(d.yAxisName) : 0;
-            return "translate(" + x + ", " + self.xSpacingInY(d.xAxisName) + ")";
-          })
           .append("circle")
           .attr("class", "circle")
           .attr("r", config.radius.normal)
-          .style({"stroke": config.baseColor,
-                  "fill-opacity": config.opacity.start,
-                  "fill": function(d) { return config.colorScale(d.seriesIndex); },
-                  "pointer-events": "none"});
+          .style("fill", function(d) { return config.colorScale(d.seriesIndex); });
 
       // Animate position
       d3.select(this).selectAll(".g-circle")
+        .attr("transform", function(d) {
+            // Position circles at intercepts
+            var x = (d.yAxisName != null) ? self.ySpacingInX(d.yAxisName) : 0;
+            return "translate(" + x + ", " + self.xSpacingInY(d.xAxisName) + ")";
+          })
         .transition()
           .delay(function(d) { return config.delayScale(d.seriesIndex); })
           .duration(config.transition.duration)
         .attr("transform", function(d) {
-            // Transition circles based of xValue and yValue; if y-axis is not defined, keep on x-axis
+            // Transition circles to xValue/yValue
             var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
             return "translate(" + self.x[d.xAxisName](d.xValue) + "," + y + ")";
         });
 
       // Animate look
       d3.select(this).selectAll(".circle")
+        .style({"stroke": config.baseColor,
+                "fill-opacity": config.opacity.start,
+                "pointer-events": "none"})
         .transition()
+          .delay(function(d) { return config.delayScale(d.seriesIndex); })
           .duration(config.transition.duration)
         .style({"stroke": function(d) { return config.colorScale(d.seriesIndex); },
                 "fill-opacity": config.opacity.end})
@@ -1199,6 +1202,38 @@ ScatterPlot.prototype.draw = function() {
         // Remove lines (exclude "main" lines)
         self.removeSelection(".dataLine");
         self.removeSelection(".originLine");
+      })
+      .on("click", function(p) {
+        // Call generic legend mouseover function
+        self.legendMouseout(d3.select(this), p);
+
+        // Display reset button
+        self.setElemDisplay(".reset-btn", true);
+
+        // Update line class
+        // Lines are not data bound (as of now), so this might not be foolproof in ensuring
+        // that the selected dataline/originLine will correspond to subsequent circle selection
+        self.removeSelection(".mainDataLine");
+        self.removeSelection(".mainOriginLine");
+        self.svg.select(".dataLine").attr("class", "line mainDataLine");
+        self.svg.select(".originLine").attr("class", "line mainOriginLine");
+        // Remove remamining lines (needed for when the data series has multiple data points)
+        self.removeSelection(".dataLine");
+        self.removeSelection(".originLine");
+
+        // Filter for (the first) circle corresponding to selected legend item
+        self.series.selectAll(".g-circle")
+            .filter(function(d) { return +d.seriesIndex === +p; })
+            .filter(function(d, i) { return i < 1; })
+            .each(function(d) {
+              // Recenter domain
+              self.recenterDomains(d);
+              // Re-draw and animate axes and circles using new domains
+              self.reScale();
+              // Center main lines
+              self.centerMainDataLine(d);
+              self.centerMainOriginLine(d);
+            });
       });
 
   // Reset chart back to original state
