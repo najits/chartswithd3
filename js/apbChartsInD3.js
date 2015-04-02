@@ -216,11 +216,11 @@ BaseChart.prototype.addChartLegend = function() {
                       "fill-opacity": self.config.opacity.start,
                       "pointer-events": "none"})
                 .transition()
-                  .delay(function(d) { return self.config.delayScale(d); })
-                  .duration(self.config.transition.duration)
-                .style({"stroke": function(d) { return self.config.colorScale(d); },
-                        "fill-opacity": self.config.opacity.end})
-                .each("end", function() { d3.select(this).style("pointer-events", null); });
+                    .delay(function(d) { return self.config.delayScale(d); })
+                    .duration(self.config.transition.duration)
+                  .style({"stroke": function(d) { return self.config.colorScale(d); },
+                          "fill-opacity": self.config.opacity.end})
+                  .each("end", function() { d3.select(this).style("pointer-events", null); });
 
   // Create and animate legend labels
   this.legend.append("text")
@@ -231,9 +231,9 @@ BaseChart.prototype.addChartLegend = function() {
               .attr("dy", self.config.dy.middle + "em")
               .style("pointer-events", "none")
                 .transition()
-                  .delay(function(d) { return self.config.delayScale(d); })
-                  .duration(self.config.transition.duration)
-                .each("end", function() { d3.select(this).style("pointer-events", null); });
+                    .delay(function(d) { return self.config.delayScale(d); })
+                    .duration(self.config.transition.duration)
+                  .each("end", function() { d3.select(this).style("pointer-events", null); });
 }
 
 // Updates legend location
@@ -253,17 +253,16 @@ BaseChart.prototype.addDataLabel = function(d) {
                 .attr("class", "dataLabels x")
                 .text(d.xValue.toFixed(2))
                 .attr("x", self.x[p](d.xValue))
+                .style("text-anchor", "middle")
                 .classed("activeText", true);
 
               if(d3.keys(self.dimensions.x).length > 1) {
                 d3.select(this).selectAll(".dataLabels.x")
-                    .attr("y", self.config.radius.large * -1.5)
-                    .style("text-anchor", "middle");
+                    .attr("y", self.config.radius.large * -1.5);
               } else {
                 d3.select(this).selectAll(".dataLabels.x")
                     .attr("dy", -1 * self.config.dy.xOffset + "em")
-                    .attr("dx", self.config.dy.xOffset + "em")
-                    .style("text-anchor", "middle");
+                    .attr("dx", self.config.dy.xOffset + "em");
               }
             });
 
@@ -664,11 +663,11 @@ BaseChart.prototype.addChartGridLines = function() {
 
   // Animate
   gridLines.selectAll("line.grid")
-    .style("stroke-opacity", 0)
+    .style("stroke-opacity", 0.0)
      .transition()
-       .delay(self.config.transition.durationShort)
-       .duration(self.config.transition.durationShort)
-    .style("stroke-opacity", self.config.opacity.end);
+         .delay(self.config.transition.durationShort)
+         .duration(self.config.transition.durationShort)
+        .style("stroke-opacity", self.config.opacity.end);
 }
 
 // Position x-axis labels
@@ -704,7 +703,10 @@ BaseChart.prototype.addChartDataPoints = function() {
           .append("circle")
           .attr("class", "circle")
           .attr("r", config.radius.normal)
-          .style("fill", function(d) { return config.colorScale(d.seriesIndex); });
+          .style("fill", function(d) {
+              d.circle = this; // http://bl.ocks.org/mbostock/8033015
+              return config.colorScale(d.seriesIndex);
+            });
 
       // Animate position
       d3.select(this).selectAll(".g-circle")
@@ -714,13 +716,13 @@ BaseChart.prototype.addChartDataPoints = function() {
             return "translate(" + x + ", " + self.xSpacingInY(d.xAxisName) + ")";
           })
         .transition()
-          .delay(function(d) { return config.delayScale(d.seriesIndex); })
-          .duration(config.transition.duration)
-        .attr("transform", function(d) {
-            // Transition circles to xValue/yValue
-            var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
-            return "translate(" + self.x[d.xAxisName](d.xValue) + "," + y + ")";
-        });
+            .delay(function(d) { return config.delayScale(d.seriesIndex); })
+            .duration(config.transition.duration)
+          .attr("transform", function(d) {
+              // Transition circles to xValue/yValue
+              var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
+              return "translate(" + self.x[d.xAxisName](d.xValue) + "," + y + ")";
+          });
 
       // Animate look
       d3.select(this).selectAll(".circle")
@@ -728,11 +730,11 @@ BaseChart.prototype.addChartDataPoints = function() {
                 "fill-opacity": config.opacity.start,
                 "pointer-events": "none"})
         .transition()
-          .delay(function(d) { return config.delayScale(d.seriesIndex); })
-          .duration(config.transition.duration)
-        .style({"stroke": function(d) { return config.colorScale(d.seriesIndex); },
-                "fill-opacity": config.opacity.end})
-        .each("end", function() { d3.select(this).style("pointer-events", null); });
+            .delay(function(d) { return config.delayScale(d.seriesIndex); })
+            .duration(config.transition.duration)
+          .style({"stroke": function(d) { return config.colorScale(d.seriesIndex); },
+                  "fill-opacity": config.opacity.end})
+          .each("end", function() { d3.select(this).style("pointer-events", null); });
   });
 }
 
@@ -770,7 +772,7 @@ BaseChart.prototype.circleMouseout = function(elem, d) {
 
   // Un-highlight legend
   this.legend.filter(function(p) { return +p === +d.seriesIndex; })
-              .each(function(p) { self.setLegendHighlight(d3.select(this), false); });
+      .each(function(p) { self.setLegendHighlight(d3.select(this), false); });
 }
 
 // Generic legend mouseover events
@@ -822,7 +824,6 @@ BaseChart.prototype.drawDataLine = function(d) {
     .attr("class", "line dataLine")
     .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top +")")
     .attr("d", this.path(d))
-    .style("pointer-events", "none")
     .style("stroke", this.config.colorScale(d.seriesIndex));
 }
 
@@ -830,8 +831,61 @@ BaseChart.prototype.drawDataLine = function(d) {
 BaseChart.prototype.centerMainDataLine = function(d) {
   this.svg.select(".mainDataLine")
     .transition()
-      .duration(this.config.transition.durationShort)
-    .attr("d", this.path(d));
+        .duration(this.config.transition.durationShort)
+      .attr("d", this.path(d));
+}
+
+// Adds voronoi paths
+BaseChart.prototype.addVoronoiPaths = function() {
+  this.allDataPoints = [];
+  var config = this.config;
+  var self = this;
+
+  // Push all data points into an array
+  for(var prop in d3.keys(self.seriesData)) {
+    self.seriesData[prop].dataObjects.map(function(d) { self.allDataPoints.push(d); });
+  }
+
+  // Create a voronoi layout
+  this.voronoi = d3.geom.voronoi()
+                  .clipExtent([[0, 0], [config.width, config.height]])
+                  .x(function(d) { return self.x[d.xAxisName](d.xValue); })
+                  .y(function(d) { return self.y[d.yAxisName](d.yValue); });
+
+  // Create a 'g' container for voronoi polygons
+  this.removeSelection(".voronoi-group");
+  var voronoiPaths = this.svg.append("g")
+                          .attr("class", "voronoi-group")
+                          .attr("transform", "translate( " + config.padding.left + ", " + config.padding.top + ")");
+
+  // Add voronoi polygon paths to chart
+  voronoiPaths.selectAll(".voronoi-path")
+                .data(this.voronoi(this.allDataPoints))
+              .enter().append("path")
+                .attr("class", "voronoi-path")
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+                .datum(function(d) { return d.point; });
+
+  // Add simple mouse listeners that highlight related data point circles
+  voronoiPaths.selectAll(".voronoi-path")
+    .on("mouseover", function(d) {
+      d3.select(d.circle).attr("r", config.radius.large);
+      // self.svg.selectAll(".voronoi-path").classed("voronoi-path-enabled", true);
+      // d3.select(this).classed("voronoi-path-select", true);
+    })
+    .on("mouseout", function(d) {
+      d3.select(d.circle).attr("r", config.radius.normal);
+      // self.svg.selectAll(".voronoi-path").classed("voronoi-path-enabled", false);
+      // d3.select(this).classed("voronoi-path-select", false);
+    });
+}
+
+// Transitions/updates voronoi paths
+BaseChart.prototype.updateVoronoiPaths = function() {
+  this.svg.selectAll(".voronoi-path")
+          .data(this.voronoi(this.allDataPoints))
+          .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+          .datum(function(d) { return d.point; });
 }
 
 // Parent draw function to generate basic chart layout
@@ -1078,9 +1132,9 @@ RulerChart.prototype.reScale = function() {
   self.svg.selectAll(".g-circle")
     .style("pointer-events", "none")
       .transition()
-        .duration(self.config.transition.durationShort)
-      .attr("transform", function(d) { return "translate(" + self.x[d.xAxisName](d.xValue) + "," + self.xSpacingInY(d.xAxisName) + ")"; })
-      .each("end", function() { d3.select(this).style("pointer-events", null); });
+          .duration(self.config.transition.durationShort)
+        .attr("transform", function(d) { return "translate(" + self.x[d.xAxisName](d.xValue) + "," + self.xSpacingInY(d.xAxisName) + ")"; })
+        .each("end", function() { d3.select(this).style("pointer-events", null); });
 }
 
 // Resizes chart
@@ -1120,6 +1174,10 @@ ScatterPlot.prototype.draw = function() {
 
   // Add gridlines
   this.addChartGridLines();
+
+  // Add voronoi paths
+  // (before data points in order to retain mouse events on data points)
+  this.addVoronoiPaths();
 
   // Add chart data points
   this.addChartDataPoints();
@@ -1179,6 +1237,9 @@ ScatterPlot.prototype.draw = function() {
         // Center main lines
         self.centerMainDataLine(d);
         self.centerMainOriginLine(d);
+
+        // Update voronoi paths
+        self.updateVoronoiPaths();
       });
 
   // Add listeners to legend
@@ -1234,6 +1295,9 @@ ScatterPlot.prototype.draw = function() {
               self.centerMainDataLine(d);
               self.centerMainOriginLine(d);
             });
+
+        // Update voronoi paths
+        self.updateVoronoiPaths();
       });
 
   // Reset chart back to original state
@@ -1256,6 +1320,9 @@ ScatterPlot.prototype.draw = function() {
 
       // Re-draw and animate axes and circles using new domains
       self.reScale();
+
+      // Update voronoi paths
+      self.updateVoronoiPaths();
     });
 
   // Resize chart on window resize
@@ -1278,7 +1345,7 @@ ScatterPlot.prototype.addOriginCircle = function() {
   // Add and place circle at origin
   originCircle.append("circle")
           .attr("class", "circle")
-          .attr("r", self.config.radius.normal-1) // Hack to retain mouseover on centered circle's perimeter
+          .attr("r", self.config.radius.normal - 1) // Hack to retain mouseover on centered circle's perimeter
           .style("fill-opacity", 0)
           .attr("transform", function() {
             var x = self.x[d3.keys(self.dimensions.x)[0]](self.xIntercept);
@@ -1304,8 +1371,8 @@ ScatterPlot.prototype.addOriginCircle = function() {
 ScatterPlot.prototype.centerMainOriginLine = function(d) {
   this.svg.select(".mainOriginLine")
     .transition()
-      .duration(this.config.transition.durationShort)
-    .attr("d", this.originPath(d, false, false));
+        .duration(this.config.transition.durationShort)
+      .attr("d", this.originPath(d, false, false));
 }
 
 // Recenters domains on 'd'
@@ -1361,9 +1428,9 @@ ScatterPlot.prototype.reScale = function() {
   self.svg.selectAll(".g-circle")
     .style("pointer-events", "none")
       .transition()
-        .duration(self.config.transition.durationShort)
-      .attr("transform", function(d) { return "translate(" + self.x[d.xAxisName](d.xValue) + "," + self.y[d.yAxisName](d.yValue) + ")"; })
-      .each("end", function() { d3.select(this).style("pointer-events", null); });
+          .duration(self.config.transition.durationShort)
+        .attr("transform", function(d) { return "translate(" + self.x[d.xAxisName](d.xValue) + "," + self.y[d.yAxisName](d.yValue) + ")"; })
+        .each("end", function() { d3.select(this).style("pointer-events", null); });
 
   // Re-draw origin circle
   self.addOriginCircle();
@@ -1378,8 +1445,7 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
 
   var path = self.svg.append("path")
               .attr("class", "line originLine")
-              .attr("transform", "translate( " + self.config.padding.left + ", " + self.config.padding.top +")")
-              .style("pointer-events", "none");
+              .attr("transform", "translate( " + self.config.padding.left + ", " + self.config.padding.top +")");
 
   if(!animate) {
     path.attr("d", self.originPath(d, extrapolate));
@@ -1388,11 +1454,11 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
     var origin = [self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)];
     path.attr("d", self.line([origin, origin]))
         .transition()
-          .delay(self.config.delayScale(d.seriesIndex))
-          .duration(self.config.transition.duration)
-        .attr("d", self.originPath(d, extrapolate))
-        .style("stroke-opacity", 0.2)
-        .each("end", function() { d3.select(this).remove(); });
+            .delay(self.config.delayScale(d.seriesIndex))
+            .duration(self.config.transition.duration)
+          .attr("d", self.originPath(d, extrapolate))
+          .style("stroke-opacity", 0.2)
+          .each("end", function() { d3.select(this).remove(); });
   }
 }
 
@@ -1457,4 +1523,8 @@ ScatterPlot.prototype.reSize = function() {
 
   // Re-draw gridlines
   this.addChartGridLines();
+
+  // Update voronoi paths
+  this.voronoi.clipExtent([[0, 0], [self.config.width, self.config.height]])
+  this.updateVoronoiPaths();
 }
