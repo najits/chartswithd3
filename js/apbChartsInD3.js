@@ -835,6 +835,22 @@ BaseChart.prototype.centerMainDataLine = function(d) {
       .attr("d", this.path(d));
 }
 
+// Returns rolled up data for voronoi maps
+BaseChart.prototype.voronoiRollup = function(data) {
+  var self = this;
+
+  var rollup = d3.nest()
+                .key(function(d) {
+                  var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
+                  return self.x[d.xAxisName](d.xValue).toFixed(5) + "," + y.toFixed(5);
+                })
+                .rollup(function(v) { return v[0]; })
+                .entries(data)
+                .map(function(d) { return d.values; });
+
+  return rollup;
+}
+
 // Adds voronoi paths
 BaseChart.prototype.addVoronoiPaths = function() {
   this.allDataPoints = [];
@@ -850,7 +866,10 @@ BaseChart.prototype.addVoronoiPaths = function() {
   this.voronoi = d3.geom.voronoi()
                   .clipExtent([[0, 0], [config.width, config.height]])
                   .x(function(d) { return self.x[d.xAxisName](d.xValue); })
-                  .y(function(d) { return self.y[d.yAxisName](d.yValue); });
+                  .y(function(d) {
+                      var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
+                      return y;
+                    });
 
   // Create a 'g' container for voronoi polygons
   this.removeSelection(".voronoi-group");
@@ -860,7 +879,7 @@ BaseChart.prototype.addVoronoiPaths = function() {
 
   // Add voronoi polygon paths to chart
   voronoiPaths.selectAll(".voronoi-path")
-                .data(this.voronoi(this.allDataPoints))
+                .data(this.voronoi(this.voronoiRollup(this.allDataPoints)))
               .enter().append("path")
                 .attr("class", "voronoi-path")
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
@@ -883,7 +902,7 @@ BaseChart.prototype.addVoronoiPaths = function() {
 // Transitions/updates voronoi paths
 BaseChart.prototype.updateVoronoiPaths = function() {
   this.svg.selectAll(".voronoi-path")
-          .data(this.voronoi(this.allDataPoints))
+          .data(this.voronoi(this.voronoiRollup(this.allDataPoints)))
           .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
           .datum(function(d) { return d.point; });
 }
@@ -904,6 +923,9 @@ BaseChart.prototype.draw = function() {
 
   // Add chart axes
   this.addChartAxes();
+
+  // Add a reset button
+  this.addResetBtn();
 }
 
 // Parent resize function to handle generic resizing tasks
@@ -957,8 +979,9 @@ RulerChart.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
-  // Add a reset button
-  this.addResetBtn();
+  // Add voronoi paths
+  // (before data points in order to retain mouse events on data points)
+  this.addVoronoiPaths();
 
   // Add chart data points
   this.addChartDataPoints();
@@ -1013,6 +1036,9 @@ RulerChart.prototype.draw = function() {
 
           // Display reset button
           self.setElemDisplay(".reset-btn", true);
+
+          // Update voronoi paths
+          self.updateVoronoiPaths();
       });
 
   // Add listeners to legend
@@ -1060,6 +1086,9 @@ RulerChart.prototype.draw = function() {
 
           // Display reset button
           self.setElemDisplay(".reset-btn", true);
+
+          // Update voronoi paths
+          self.updateVoronoiPaths();
       });
 
   // Reset chart back to original state
@@ -1079,6 +1108,9 @@ RulerChart.prototype.draw = function() {
 
       // Re-draw and animate x axes and circles using new domains
       self.reScale();
+
+      // Update voronoi paths
+      self.updateVoronoiPaths();
     });
 
   // Resize chart on window resize
@@ -1169,18 +1201,15 @@ ScatterPlot.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
-  // Add a reset button
-  this.addResetBtn();
-
-  // Add gridlines
-  this.addChartGridLines();
-
   // Add voronoi paths
   // (before data points in order to retain mouse events on data points)
   this.addVoronoiPaths();
 
   // Add chart data points
   this.addChartDataPoints();
+
+  // Add gridlines
+  this.addChartGridLines();
 
   // Carry 'this' context in 'self'
   var self = this;
