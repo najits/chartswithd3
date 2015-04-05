@@ -51,7 +51,7 @@ BaseChart.prototype.setToDefaultParams = function() {
     baseColor:            "#EBEBEB",
     opacity:              {start: 0.1, end: 0.6},
     // Element sizes
-    radius:               {normal: 7, large: 10},
+    radius:               {normal: 5, large: 10},
     // Transitions
     transition:           {duration: 1250, durationShort: 1000, delay: 75},
     // Axis
@@ -74,17 +74,32 @@ BaseChart.prototype.setToDefaultParams = function() {
 
 // Computes and sets width/height params from chart width/height
 BaseChart.prototype.setWidthHeight = function() {
+  // Set outer sizes and compute inner sizes
   this.config.outerWidth = parseInt(this.config.chart.style("width"));
   this.config.outerHeight = parseInt(this.config.chart.style("height"));
   this.config.width = this.config.outerWidth - this.config.margin.left - this.config.margin.right - this.config.padding.left - this.config.padding.right;
   this.config.height = this.config.outerHeight - this.config.margin.top - this.config.margin.bottom - this.config.padding.top - this.config.padding.bottom;
 
+  // Set diagonal length
+  this.config.diagonal = this.calculateLength([this.config.width, this.config.height]);
+
+  // Set radius scale domain and range
+  this.config.radiusScale
+      .domain([0, this.config.diagonal / 2])
+      .range([this.config.radius.large, this.config.radius.normal + 1]);
+
+  // Set legend offsets
   this.config.legendOffset.x = this.config.radius.large;
-  this.config.legendOffset.y = 3 * this.config.radius.large;
+  this.config.legendOffset.y = this.config.radius.large * 3;
 
   // Set x-axis tick count
   this.axis.ticks(this.tickCount());
 }
+
+BaseChart.prototype.calculateLength = function(b, a) {
+  if(a == null) { a = [0, 0]; }
+  return Math.sqrt(Math.pow(b[0] - a[0], 2) + Math.pow(b[1] - a[1], 2));
+};
 
 // Set color range
 BaseChart.prototype.setColorRange = function() {
@@ -96,6 +111,10 @@ BaseChart.prototype.setDelayRange = function() {
   this.config.delayScale.range([0, this.config.transition.delay]);
 }
 
+BaseChart.prototype.getPaddingTransform = function() {
+  return "translate( " + this.config.padding.left + ", " + this.config.padding.top +")";
+}
+
 // Public setters for chart parameters and config
 BaseChart.prototype.setConfig = function() {
   var chartParent = this.args.chartParent,
@@ -103,13 +122,14 @@ BaseChart.prototype.setConfig = function() {
       chart = d3.select(chartParent);
 
   // Margins, padding and spacing
-  var outerWidth, outerHeight, margin, padding, width, height,
+  var outerWidth, outerHeight, margin, padding, width, height, diagonal,
       ordinalPadding, legendItemSpacing, legendOffset = {}, dy = {};
 
   // Color and opacity
   var colorRange, baseColor, opacity,
       colorScale = d3.scale.ordinal(),
-      delayScale = d3.scale.linear();
+      delayScale = d3.scale.linear(),
+      radiusScale = d3.scale.sqrt().clamp(true);
 
   // Element sizes
   var radius;
@@ -138,6 +158,7 @@ BaseChart.prototype.setConfig = function() {
     colorRange: colorRange,
     colorScale: colorScale,
     delayScale: delayScale,
+    radiusScale: radiusScale,
     baseColor: baseColor,
     opacity: opacity,
     radius: radius,
@@ -619,7 +640,7 @@ BaseChart.prototype.addChartGridLines = function() {
   // Add a 'g' element to house gridlines
   var gridLines = this.svg.append("g")
                       .attr("class", "gridlines")
-                      .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top +")");
+                      .attr("transform", this.getPaddingTransform());
 
   // Get axes ticks; filter out intercepts and domain ends
   var xAxis = d3.keys(self.dimensions.x)[0];
@@ -696,7 +717,7 @@ BaseChart.prototype.addChartDataPoints = function() {
                           .data(d3.keys(self.seriesData))
                         .enter().append("g")
                           .attr("class", "g-series")
-                          .attr("transform", "translate( " + self.config.padding.left + ", " + self.config.padding.top + ")");
+                          .attr("transform", this.getPaddingTransform());
 
   this.series.each(function(p) {
       // Add circles for all series dataObjects
@@ -825,7 +846,7 @@ BaseChart.prototype.highlightAxis = function(d, value) {
 BaseChart.prototype.drawDataLine = function(d) {
   this.svg.append("path")
     .attr("class", "line dataLine")
-    .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top +")")
+    .attr("transform", this.getPaddingTransform())
     .attr("d", this.path(d))
     .style("stroke", this.config.colorScale(d.seriesIndex));
 }
@@ -874,7 +895,7 @@ BaseChart.prototype.addVoronoiPaths = function() {
   this.removeSelection(".voronoi-group");
   var voronoiPaths = this.svg.append("g")
                           .attr("class", "voronoi-group")
-                          .attr("transform", "translate( " + config.padding.left + ", " + config.padding.top + ")");
+                          .attr("transform", this.getPaddingTransform());
 
   // Add voronoi polygon paths to chart
   voronoiPaths.selectAll(".voronoi-path")
@@ -886,8 +907,12 @@ BaseChart.prototype.addVoronoiPaths = function() {
 
   // Add simple mouse listeners that highlight related data point circles
   voronoiPaths.selectAll(".voronoi-path")
-    .on("mouseover", function(d) {
-      d3.select(d.circle).attr("r", config.radius.large);
+    .on("mousemove", function(d) {
+      var m = d3.mouse(this);
+      var a = d3.transform(d3.select(d.circle.parentNode).attr("transform")).translate;
+      var length = self.calculateLength(m, a);
+      d3.select(d.circle).attr("r", self.config.radiusScale(length));
+
       // self.svg.selectAll(".voronoi-path").classed("voronoi-path-enabled", true);
       // d3.select(this).classed("voronoi-path-select", true);
     })
@@ -1367,7 +1392,7 @@ ScatterPlot.prototype.addOriginCircle = function() {
   // Add 'g' element to contain circle
   var originCircle = this.svg.append("g")
                       .attr("class", "origin-circle")
-                      .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top + ")");
+                      .attr("transform", this.getPaddingTransform());
 
   var self = this;
   // Add and place circle at origin
@@ -1473,7 +1498,7 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
 
   var path = self.svg.append("path")
               .attr("class", "line originLine")
-              .attr("transform", "translate( " + self.config.padding.left + ", " + self.config.padding.top +")");
+              .attr("transform", this.getPaddingTransform());
 
   if(!animate) {
     path.attr("d", self.originPath(d, extrapolate));
