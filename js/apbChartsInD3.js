@@ -621,7 +621,7 @@ BaseChart.prototype.addChartGridLines = function() {
                       .attr("class", "gridlines")
                       .attr("transform", "translate( " + this.config.padding.left + ", " + this.config.padding.top +")");
 
-  // Get axes ticks, filter out intercepts and domain ends
+  // Get axes ticks; filter out intercepts and domain ends
   var xAxis = d3.keys(self.dimensions.x)[0];
   var xTicks = self.x[xAxis].ticks(self.tickCount())
                             .filter(function(d) {
@@ -682,6 +682,10 @@ BaseChart.prototype.positionXAxisLabel = function() {
   }
 }
 
+BaseChart.prototype.yValueRange = function(d) {
+  return (d.yAxisName != null) ? this.y[d.yAxisName](d.yValue) : this.xSpacingInY(d.xAxisName);
+}
+
 // Adds data points to charts
 BaseChart.prototype.addChartDataPoints = function() {
   var self = this;
@@ -720,8 +724,7 @@ BaseChart.prototype.addChartDataPoints = function() {
             .duration(config.transition.duration)
           .attr("transform", function(d) {
               // Transition circles to xValue/yValue
-              var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
-              return "translate(" + self.x[d.xAxisName](d.xValue) + "," + y + ")";
+              return "translate(" + self.x[d.xAxisName](d.xValue) + "," + self.yValueRange(d) + ")";
           });
 
       // Animate look
@@ -841,8 +844,7 @@ BaseChart.prototype.voronoiRollup = function(data) {
 
   var rollup = d3.nest()
                 .key(function(d) {
-                  var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
-                  return self.x[d.xAxisName](d.xValue).toFixed(5) + "," + y.toFixed(5);
+                  return self.x[d.xAxisName](d.xValue).toFixed(5) + "," + self.yValueRange(d).toFixed(5);
                 })
                 .rollup(function(v) { return v[0]; })
                 .entries(data)
@@ -866,10 +868,7 @@ BaseChart.prototype.addVoronoiPaths = function() {
   this.voronoi = d3.geom.voronoi()
                   .clipExtent([[0, 0], [config.width, config.height]])
                   .x(function(d) { return self.x[d.xAxisName](d.xValue); })
-                  .y(function(d) {
-                      var y = (d.yAxisName != null) ? self.y[d.yAxisName](d.yValue) : self.xSpacingInY(d.xAxisName);
-                      return y;
-                    });
+                  .y(function(d) { return self.yValueRange(d); });
 
   // Create a 'g' container for voronoi polygons
   this.removeSelection(".voronoi-group");
