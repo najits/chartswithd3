@@ -49,7 +49,7 @@ BaseChart.prototype.setToDefaultParams = function() {
     // Color and opacity
     colorRange:           ["#37B34A", "#008CCF", "#671E75", "#CB333B", "#ED8B00"],
     baseColor:            "#EBEBEB",
-    opacity:              {start: 0.1, end: 0.6},
+    opacity:              {start: 0.05, end: 0.5},
     // Element sizes
     radius:               {normal: 5, large: 10},
     // Transitions
@@ -1510,15 +1510,15 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
   if(!animate) {
     path.attr("d", self.originPath(d, extrapolate));
   } else {
-    // Animate line from origin (zero length) to data point; fade out and remove at end of animation
+    // Animate line from origin to data point; fade out and remove at end of animation
     var origin = [self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)];
     path.attr("d", self.line([origin, origin]))
         .transition()
             .delay(self.config.delayScale(d.seriesIndex))
             .duration(self.config.transition.duration)
           .attr("d", self.originPath(d, extrapolate))
-          .style("stroke-opacity", 0.2)
-          .each("end", function() { d3.select(this).remove(); });
+          .style("stroke-opacity", self.config.opacity.start)
+          .remove();
   }
 }
 
