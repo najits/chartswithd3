@@ -84,6 +84,7 @@ BaseChart.prototype.setWidthHeight = function() {
   this.config.diagonal = this.calculateLength([this.config.width, this.config.height]);
 
   // Set radius scale domain and range
+  // Domain set to 50% of chart diagonal (diagonal representing the maximum distance between two points on the chart)
   this.config.radiusScale
       .domain([0, this.config.diagonal / 2])
       .range([this.config.radius.large, this.config.radius.normal + 1]);
@@ -905,21 +906,27 @@ BaseChart.prototype.addVoronoiPaths = function() {
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
                 .datum(function(d) { return d.point; });
 
+  var a;
   // Add simple mouse listeners that highlight related data point circles
   voronoiPaths.selectAll(".voronoi-path")
+    .on("mouseover", function(d) {
+      // Store related circle's position (for use by mousemove)
+      a = d3.transform(d3.select(d.circle.parentNode).attr("transform")).translate;
+    })
     .on("mousemove", function(d) {
-      var m = d3.mouse(this);
-      var a = d3.transform(d3.select(d.circle.parentNode).attr("transform")).translate;
-      var length = self.calculateLength(m, a);
-      d3.select(d.circle).attr("r", self.config.radiusScale(length));
-
       // self.svg.selectAll(".voronoi-path").classed("voronoi-path-enabled", true);
       // d3.select(this).classed("voronoi-path-select", true);
+
+      var m = d3.mouse(this);
+      var length = self.calculateLength(m, a);
+      d3.select(d.circle).attr("r", config.radiusScale(length));
     })
     .on("mouseout", function(d) {
-      d3.select(d.circle).attr("r", config.radius.normal);
       // self.svg.selectAll(".voronoi-path").classed("voronoi-path-enabled", false);
       // d3.select(this).classed("voronoi-path-select", false);
+
+      a = null;
+      d3.select(d.circle).attr("r", config.radius.normal);
     });
 }
 
