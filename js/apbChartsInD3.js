@@ -29,7 +29,11 @@ Function.prototype.inheritsFrom = function(parentClassOrObject) {
 }
 
 
-/* BaseChart */
+/* BaseChart
+ *
+ * Base charting class providing common functions and processing for other charts
+ *
+*/
 
 // Define BaseChart class
 function BaseChart() {
@@ -488,7 +492,7 @@ BaseChart.prototype.processChartData = function() {
           };
           self.dimensions.x[dd.xAxisName].dataObjects.push(obj);
         }
-      // Check if x and y values are defined (e.g. ScatterPlot)
+      // Check if x and y values are defined (e.g. XYPlot, ScatterPlot)
       } else if((dd.x != null) && (dd.y != null)) {
         // Check that only one x- and y-axis is defined
         if((d3.keys(self.dimensions.x).length === 1) && (d3.keys(self.dimensions.y).length === 1)) {
@@ -1009,7 +1013,14 @@ BaseChart.prototype.reSize = function() {
 }
 
 
-/* RulerChart */
+/* RulerChart
+ *
+ * Chart numeric data across multiple dimensions for multiple data series
+ * Each dimension is represented by an independent x-axis with individual domains, minimums and maximums
+ * Resembles a 'multiples' chart
+ * Alternative to a grouped bar chart when visualizing data across multiple (somewhat) unrelated dimensions
+ *
+*/
 
 // Define RulerChart class
 function RulerChart(args) {
@@ -1234,19 +1245,26 @@ RulerChart.prototype.reSize = function() {
 }
 
 
-/* ScatterPlot */
+/* XYPlot
+ *
+ * Chart numeric data across two dimenstions for multiple data series
+ * Different from ScatterPlot in expecting a >>single<< data point for each series
+ * Focus is on comparing values across series, rather than inferring relationship between the two dimensions
+ * Does not break if provided multiple data points in a series, but interactions will be compromised
+ *
+*/
 
-// Define ScatterPlot class
-function ScatterPlot(args) {
+// Define XYPlot class
+function XYPlot(args) {
   this.args = args;
   this.setConfig(args); // call config setter inside constructor
 }
 
 // Inherit from BaseChart
-ScatterPlot.inheritsFrom(BaseChart);
+XYPlot.inheritsFrom(BaseChart);
 
 // RulerChart's draw function
-ScatterPlot.prototype.draw = function() {
+XYPlot.prototype.draw = function() {
 
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
@@ -1411,7 +1429,7 @@ ScatterPlot.prototype.draw = function() {
 }
 
 // Adds invisible circle at origin
-ScatterPlot.prototype.addOriginCircle = function() {
+XYPlot.prototype.addOriginCircle = function() {
   // Remove existing circle
   this.removeSelection('.origin-circle');
 
@@ -1447,7 +1465,7 @@ ScatterPlot.prototype.addOriginCircle = function() {
 }
 
 // Centers main lines
-ScatterPlot.prototype.centerMainOriginLine = function(d) {
+XYPlot.prototype.centerMainOriginLine = function(d) {
   this.svg.select('.mainOriginLine')
     .transition()
         .duration(this.config.transition.durationShort)
@@ -1455,7 +1473,7 @@ ScatterPlot.prototype.centerMainOriginLine = function(d) {
 }
 
 // Recenters domains on 'd'
-ScatterPlot.prototype.recenterDomains = function(d) {
+XYPlot.prototype.recenterDomains = function(d) {
   var minMax;
   var centerVal;
   var distFromCenter;
@@ -1496,7 +1514,7 @@ ScatterPlot.prototype.recenterDomains = function(d) {
 }
 
 // Redraws axes and circles
-ScatterPlot.prototype.reScale = function() {
+XYPlot.prototype.reScale = function() {
   // Update axes locations given new intercepts
   this.updateXAxesLocation(this.config.transition.durationShort);
   this.updateYAxesLocation(this.config.transition.durationShort);
@@ -1522,7 +1540,7 @@ ScatterPlot.prototype.reScale = function() {
 }
 
 // Add lines from origin
-ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
+XYPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
   var self = this;
 
   var path = self.svg.append('path')
@@ -1545,7 +1563,7 @@ ScatterPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
 }
 
 // Returns the path from the origin a given data point
-ScatterPlot.prototype.originPath = function(d, extrapolate) {
+XYPlot.prototype.originPath = function(d, extrapolate) {
   var coords = [];
   var slope;
   var yExtrapolate;
@@ -1583,7 +1601,7 @@ ScatterPlot.prototype.originPath = function(d, extrapolate) {
 }
 
 // Returns the path for a given data point
-ScatterPlot.prototype.path = function(d) {
+XYPlot.prototype.path = function(d) {
   var self = this;
   var coords = [];
 
@@ -1595,7 +1613,7 @@ ScatterPlot.prototype.path = function(d) {
 }
 
 // Resizes chart
-ScatterPlot.prototype.reSize = function() {
+XYPlot.prototype.reSize = function() {
   // Call parent reSize function
   this.parent.reSize.call(this);
 

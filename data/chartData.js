@@ -335,7 +335,7 @@ var rulerChartData2 = {
     }
 };
 
-var scatterPlotData1 = {
+var xyPlotData1 = {
     chart: {
         title: {
             text: "Scatter Plot of Income Yield vs. Total Risk"
@@ -420,7 +420,7 @@ var scatterPlotData1 = {
     }
 };
 
-var scatterPlotData2 = {
+var xyPlotData2 = {
     chart: {
         title: {
             text: "Scatter Plot of Income Yield vs. Total Risk 2"
