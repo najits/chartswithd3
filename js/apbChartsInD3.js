@@ -863,21 +863,33 @@ BaseChart.prototype.highlightAxis = function(d, bool) {
   };
 }
 
-// Draws data line paths
-BaseChart.prototype.drawDataLine = function(d) {
+// Returns the path for a given data point to axes
+BaseChart.prototype.pathToAxes = function(d) {
+  // var self = this;
+  var coords = [];
+
+  coords.push([this.ySpacingInX(d.yAxisName), this.y[d.yAxisName](d.yValue)]);
+  coords.push([this.x[d.xAxisName](d.xValue), this.y[d.yAxisName](d.yValue)]);
+  coords.push([this.x[d.xAxisName](d.xValue), this.xSpacingInY(d.xAxisName)]);
+
+  return this.line(coords);
+}
+
+// Draws line from data point to axes
+BaseChart.prototype.drawLineToAxes = function(d) {
   this.svg.append('path')
     .attr('class', 'line dataLine')
     .attr('transform', this.getPaddingTransform())
-    .attr('d', this.path(d))
+    .attr('d', this.pathToAxes(d))
     .style('stroke', this.config.colorScale(d.seriesIndex));
 }
 
 // Center main data line
-BaseChart.prototype.centerMainDataLine = function(d) {
+BaseChart.prototype.centerMainLineToAxes = function(d) {
   this.svg.select('.mainDataLine')
     .transition()
         .duration(this.config.transition.durationShort)
-      .attr('d', this.path(d));
+      .attr('d', this.pathToAxes(d));
 }
 
 // Returns rolled up data for voronoi maps
@@ -1065,7 +1077,7 @@ RulerChart.prototype.draw = function() {
           self.circleMouseover(d3.select(this), d);
 
           // Add line connecting dimensions
-          self.drawDataLine(d);
+          self.drawLineToAxes(d);
 
           // Highlight axes labels
           self.highlightAxis(d, true);
@@ -1098,7 +1110,7 @@ RulerChart.prototype.draw = function() {
           self.reScale();
 
           // Animate lines
-          self.centerMainDataLine(d);
+          self.centerMainLineToAxes(d);
 
           // Unhighlight axis labels
           self.highlightAxis(d, false);
@@ -1120,9 +1132,9 @@ RulerChart.prototype.draw = function() {
           self.svg.selectAll('.axisLabel').classed('activeText', true);
 
           // Add line
-          // Slight hack in order to re-use the same drawDataLine function used for circles
+          // Slight hack in order to re-use the same drawLineToAxes function used for circles
           var obj = {seriesIndex: +p};
-          self.drawDataLine(obj);
+          self.drawLineToAxes(obj);
       })
       .on('mouseout', function(p) {
           // Call generic legend mouseout function
@@ -1149,9 +1161,9 @@ RulerChart.prototype.draw = function() {
           self.reScale();
 
           // Animate line
-          // Slight hack in order to re-use the same drawDataLine function used for circles
+          // Slight hack in order to re-use the same drawLineToAxes function used for circles
           var obj = {seriesIndex: +p};
-          self.centerMainDataLine(obj);
+          self.centerMainLineToAxes(obj);
 
           // Display reset button
           self.setElemDisplay('.reset-btn', true);
@@ -1183,8 +1195,9 @@ RulerChart.prototype.draw = function() {
     });
 }
 
-// Returns the path across dimensions for given data point
-RulerChart.prototype.path = function(d) {
+// Overrides BaseChart.pathToAxes()
+// Returns the path across dimensions for a given data point (series)
+RulerChart.prototype.pathToAxes = function(d) {
   var self = this;
   return self.line(d3.keys(self.dimensions.x).map(function(p) {
                 return [self.x[p](self.seriesData[d.seriesIndex].dataObjects.filter(function(dd) { return dd.xAxisName === p; })[0].xValue), self.xSpacingInY(p)];
@@ -1255,7 +1268,7 @@ RulerChart.prototype.reSize = function() {
  *
  * Chart numeric data across two dimensions for multiple data series
  * Different from ScatterPlot in expecting a >>single<< data point for each series
- * Focus is on comparing values across series, rather than inferring relationship between the two dimensions
+ * Focus is on comparing values across series, rather than inferring a relationship between the two dimensions
  * Does not break if provided multiple data points in a series, but interactions will be compromised
  *
 */
@@ -1302,7 +1315,7 @@ XYPlot.prototype.draw = function() {
         self.circleMouseover(d3.select(this), d);
 
         // Add data lines
-        self.drawDataLine(d);
+        self.drawLineToAxes(d);
 
         // Add origin lines
         self.drawLineFromOrigin(d, true, false);
@@ -1338,8 +1351,8 @@ XYPlot.prototype.draw = function() {
         self.reScale();
 
         // Center main lines
-        self.centerMainDataLine(d);
-        self.centerMainOriginLine(d);
+        self.centerMainLineToAxes(d);
+        self.centerMainLineFromOrigin(d);
 
         // Update voronoi paths
         self.updateVoronoiPaths();
@@ -1355,7 +1368,7 @@ XYPlot.prototype.draw = function() {
         self.series.selectAll('.g-circle')
             .filter(function(d) { return +d.seriesIndex === +p; })
             .each(function(d) {
-                self.drawDataLine(d);
+                self.drawLineToAxes(d);
                 self.drawLineFromOrigin(d, true, false);
               });
       })
@@ -1395,8 +1408,8 @@ XYPlot.prototype.draw = function() {
               // Re-draw and animate axes and circles using new domains
               self.reScale();
               // Center main lines
-              self.centerMainDataLine(d);
-              self.centerMainOriginLine(d);
+              self.centerMainLineToAxes(d);
+              self.centerMainLineFromOrigin(d);
             });
 
         // Update voronoi paths
@@ -1463,11 +1476,11 @@ XYPlot.prototype.addOriginCircle = function() {
 }
 
 // Centers main lines
-XYPlot.prototype.centerMainOriginLine = function(d) {
+XYPlot.prototype.centerMainLineFromOrigin = function(d) {
   this.svg.select('.mainOriginLine')
     .transition()
         .duration(this.config.transition.durationShort)
-      .attr('d', this.originPath(d, false, false));
+      .attr('d', this.pathFromOrigin(d, false, false));
 }
 
 // Recenters domains on 'd'
@@ -1546,7 +1559,7 @@ XYPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
               .attr('transform', this.getPaddingTransform());
 
   if(!animate) {
-    path.attr('d', self.originPath(d, extrapolate));
+    path.attr('d', self.pathFromOrigin(d, extrapolate));
   } else {
     // Animate line from origin to data point; fade out and remove at end of animation
     var origin = [self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)];
@@ -1554,14 +1567,14 @@ XYPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
         .transition()
             .delay(self.config.delayScale(d.seriesIndex))
             .duration(self.config.transition.duration)
-          .attr('d', self.originPath(d, extrapolate))
+          .attr('d', self.pathFromOrigin(d, extrapolate))
           .style('stroke-opacity', self.config.opacity.start)
           .remove();
   }
 }
 
 // Returns the path from the origin a given data point
-XYPlot.prototype.originPath = function(d, extrapolate) {
+XYPlot.prototype.pathFromOrigin = function(d, extrapolate) {
   var coords = [];
   var slope;
   var yExtrapolate;
@@ -1598,18 +1611,6 @@ XYPlot.prototype.originPath = function(d, extrapolate) {
   return self.line(coords);
 }
 
-// Returns the path for a given data point
-XYPlot.prototype.path = function(d) {
-  var self = this;
-  var coords = [];
-
-  coords.push([self.ySpacingInX(d.yAxisName), self.y[d.yAxisName](d.yValue)]);
-  coords.push([self.x[d.xAxisName](d.xValue), self.y[d.yAxisName](d.yValue)]);
-  coords.push([self.x[d.xAxisName](d.xValue), self.xSpacingInY(d.xAxisName)]);
-
-  return self.line(coords);
-}
-
 // Resizes chart
 XYPlot.prototype.reSize = function() {
   // Call parent reSize function
@@ -1634,8 +1635,8 @@ XYPlot.prototype.reSize = function() {
 /* ScatterPlot
  *
  * Chart numeric data across two dimensions for multiple data series
- * Classic scatter plot; different from XYPlot in expecting multiple (a lot!) of data points per series
- * Focus is on inferring relationship between the two dimensions per series and comparing said relationships across series
+ * Classic scatter plot; different from XYPlot in expecting multiple (a lot!) data points per series
+ * Focus is on inferring relationship between the two dimensions and comparing said relationships across series
  *
 */
 
@@ -1674,7 +1675,7 @@ ScatterPlot.prototype.draw = function() {
         self.circleMouseover(d3.select(this), d);
 
         // Add data lines
-        self.drawDataLine(d);
+        self.drawLineToAxes(d);
       })
       .on('mouseout', function(d) {
         // Call generic mouseout function
@@ -1722,18 +1723,6 @@ ScatterPlot.prototype.draw = function() {
       // Hide reset button
       self.setElemDisplay('.reset-btn', false);
     });
-}
-
-// Returns the path for a given data point
-ScatterPlot.prototype.path = function(d) {
-  var self = this;
-  var coords = [];
-
-  coords.push([self.ySpacingInX(d.yAxisName), self.y[d.yAxisName](d.yValue)]);
-  coords.push([self.x[d.xAxisName](d.xValue), self.y[d.yAxisName](d.yValue)]);
-  coords.push([self.x[d.xAxisName](d.xValue), self.xSpacingInY(d.xAxisName)]);
-
-  return self.line(coords);
 }
 
 // Resizes chart
