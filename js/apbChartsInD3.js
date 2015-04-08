@@ -667,17 +667,17 @@ BaseChart.prototype.addChartGridLines = function() {
   var xAxis = d3.keys(self.dimensions.x)[0];
   var xTicks = self.x[xAxis].ticks(self.tickCount())
                             .filter(function(d) {
-                                return (d !== self.xIntercept)
-                                    && (d !== self.x[xAxis].domain()[0])
-                                    && (d !== self.x[xAxis].domain()[1]);
+                                return (d.toFixed(5) !== self.xIntercept.toFixed(5))
+                                    && (d.toFixed(5) !== self.x[xAxis].domain()[0].toFixed(5))
+                                    && (d.toFixed(5) !== self.x[xAxis].domain()[1].toFixed(5));
                               });
 
   var yAxis = d3.keys(self.dimensions.y)[0];
   var yTicks = self.y[yAxis].ticks(self.tickCount())
                             .filter(function(d) {
-                                return (d !== self.yIntercept)
-                                    && (d !== self.y[yAxis].domain()[0])
-                                    && (d !== self.y[yAxis].domain()[1]);
+                                return (d.toFixed(5) !== self.yIntercept.toFixed(5))
+                                    && (d.toFixed(5) !== self.y[yAxis].domain()[0].toFixed(5))
+                                    && (d.toFixed(5) !== self.y[yAxis].domain()[1].toFixed(5));
                               });
 
   // Add grid lines
@@ -960,6 +960,8 @@ BaseChart.prototype.updateVoronoiPaths = function() {
 
 // Parent draw function to generate basic chart layout
 BaseChart.prototype.draw = function() {
+  var self = this;
+
   // Create SVG to house chart
   this.addChartContainer();
 
@@ -977,6 +979,11 @@ BaseChart.prototype.draw = function() {
 
   // Add a reset button
   this.addResetBtn();
+
+  // Resize chart on window resize
+  // https://github.com/mbostock/d3/wiki/Selections#on
+  // To register multiple listeners for the same event type, the type may be followed by an optional namespace...
+  d3.select(window).on('resize' + '.' + self.config.chartParent, function() { self.reSize(); });
 }
 
 // Parent resize function to handle generic resizing tasks
@@ -1010,6 +1017,10 @@ BaseChart.prototype.reSize = function() {
 
   // Re-position x-axis labels
   this.positionXAxisLabel();
+
+  // Update voronoi paths
+  this.voronoi.clipExtent([[0, 0], [this.config.width, this.config.height]]);
+  this.updateVoronoiPaths();
 }
 
 
@@ -1170,14 +1181,9 @@ RulerChart.prototype.draw = function() {
       // Update voronoi paths
       self.updateVoronoiPaths();
     });
-
-  // Resize chart on window resize
-  // https://github.com/mbostock/d3/wiki/Selections#on
-  // To register multiple listeners for the same event type, the type may be followed by an optional namespace...
-  d3.select(window).on('resize' + '.' + self.config.chartParent, function() { self.reSize(); });
 }
 
-// Returns the path across dimenstions for given data point
+// Returns the path across dimensions for given data point
 RulerChart.prototype.path = function(d) {
   var self = this;
   return self.line(d3.keys(self.dimensions.x).map(function(p) {
@@ -1247,7 +1253,7 @@ RulerChart.prototype.reSize = function() {
 
 /* XYPlot
  *
- * Chart numeric data across two dimenstions for multiple data series
+ * Chart numeric data across two dimensions for multiple data series
  * Different from ScatterPlot in expecting a >>single<< data point for each series
  * Focus is on comparing values across series, rather than inferring relationship between the two dimensions
  * Does not break if provided multiple data points in a series, but interactions will be compromised
@@ -1402,9 +1408,6 @@ XYPlot.prototype.draw = function() {
       // Hide reset button
       self.setElemDisplay('.reset-btn', false);
 
-      // Re-display gridlines
-      self.setElemDisplay('.gridlines', true);
-
       // Remove any lines and data labels
       self.removeSelection('.line');
       self.removeSelection('.dataLabels');
@@ -1421,11 +1424,6 @@ XYPlot.prototype.draw = function() {
       // Update voronoi paths
       self.updateVoronoiPaths();
     });
-
-  // Resize chart on window resize
-  // https://github.com/mbostock/d3/wiki/Selections#on
-  // To register multiple listeners for the same event type, the type may be followed by an optional namespace...
-  d3.select(window).on('resize' + '.' + self.config.chartParent, function() { self.reSize(); });
 }
 
 // Adds invisible circle at origin
@@ -1630,8 +1628,127 @@ XYPlot.prototype.reSize = function() {
 
   // Re-draw gridlines
   this.addChartGridLines();
+}
 
-  // Update voronoi paths
-  this.voronoi.clipExtent([[0, 0], [self.config.width, self.config.height]])
-  this.updateVoronoiPaths();
+
+/* ScatterPlot
+ *
+ * Chart numeric data across two dimensions for multiple data series
+ * Classic scatter plot; different from XYPlot in expecting multiple (a lot!) of data points per series
+ * Focus is on inferring relationship between the two dimensions per series and comparing said relationships across series
+ *
+*/
+
+// Define ScatterPlot class
+function ScatterPlot(args) {
+  this.args = args;
+  this.setConfig(args); // call config setter inside constructor
+}
+
+// Inherit from BaseChart
+ScatterPlot.inheritsFrom(BaseChart);
+
+// RulerChart's draw function
+ScatterPlot.prototype.draw = function() {
+
+  // Call parent draw function for basic chart layout
+  this.parent.draw.call(this);
+
+  // Add voronoi paths
+  // (before data points in order to retain mouse events on data points)
+  this.addVoronoiPaths();
+
+  // Add chart data points
+  this.addChartDataPoints();
+
+  // Add gridlines
+  this.addChartGridLines();
+
+  // Carry 'this' context in 'self'
+  var self = this;
+
+  // Add listeners to circles
+  this.series.selectAll('.g-circle')
+      .on('mouseover', function(d) {
+        // Call generic mouseover function
+        self.circleMouseover(d3.select(this), d);
+
+        // Add data lines
+        self.drawDataLine(d);
+      })
+      .on('mouseout', function(d) {
+        // Call generic mouseout function
+        self.circleMouseout(d3.select(this), d);
+
+        // Remove lines (exclude 'main' lines)
+        self.removeSelection('.dataLine');
+      })
+      .on('click', function(d) {
+        // Call generic mouseout function
+        self.circleMouseout(d3.select(this), d);
+
+        // Display reset button
+        self.setElemDisplay('.reset-btn', true);
+      });
+
+  // Add listeners to legend
+  this.legend
+      .on('mouseover', function(p) {
+        // Call generic legend mouseover function
+        self.legendMouseover(d3.select(this), p);
+
+        // Add lines
+        self.series.selectAll('.g-circle')
+            .filter(function(d) { return +d.seriesIndex === +p; })
+            .each(function(d) {
+                //
+                //
+              });
+      })
+      .on('mouseout', function(p) {
+        // Call generic legend mouseover function
+        self.legendMouseout(d3.select(this), p);
+      })
+      .on('click', function(p) {
+        // Call generic legend mouseover function
+        self.legendMouseout(d3.select(this), p);
+
+        // Display reset button
+        self.setElemDisplay('.reset-btn', true);
+      });
+
+  // Reset chart back to original state
+  this.resetBtn.on('click', function() {
+      // Hide reset button
+      self.setElemDisplay('.reset-btn', false);
+    });
+}
+
+// Returns the path for a given data point
+ScatterPlot.prototype.path = function(d) {
+  var self = this;
+  var coords = [];
+
+  coords.push([self.ySpacingInX(d.yAxisName), self.y[d.yAxisName](d.yValue)]);
+  coords.push([self.x[d.xAxisName](d.xValue), self.y[d.yAxisName](d.yValue)]);
+  coords.push([self.x[d.xAxisName](d.xValue), self.xSpacingInY(d.xAxisName)]);
+
+  return self.line(coords);
+}
+
+// Resizes chart
+ScatterPlot.prototype.reSize = function() {
+  // Call parent reSize function
+  this.parent.reSize.call(this);
+
+  var self = this;
+
+  // Re-space circles
+  this.series.each(function(p) {
+    d3.select(this).selectAll('.g-circle')
+      .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.y[d.yAxisName](d.yValue) + ')'; });
+  });
+
+  // Re-draw gridlines
+  this.addChartGridLines();
 }
