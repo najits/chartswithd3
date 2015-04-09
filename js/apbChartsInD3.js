@@ -790,6 +790,9 @@ BaseChart.prototype.circleMouseover = function(elem, d) {
   // Highlight legend corresponding to selected circle
   this.legend.filter(function(p) { return +p === +d.seriesIndex; })
       .each(function(p) { self.setLegendHighlight(d3.select(this), true); });
+
+  // Draw data line to axes
+  this.drawLineToAxes(d);
 }
 
 // Generic circle mouseout events
@@ -805,6 +808,9 @@ BaseChart.prototype.circleMouseout = function(elem, d) {
   // Un-highlight legend
   this.legend.filter(function(p) { return +p === +d.seriesIndex; })
       .each(function(p) { self.setLegendHighlight(d3.select(this), false); });
+
+  // Remove data line
+  this.removeSelection('.dataLine');
 }
 
 // Generic legend mouseover events
@@ -1079,9 +1085,6 @@ RulerChart.prototype.draw = function() {
           // Call generic mouseover function
           self.circleMouseover(d3.select(this), d);
 
-          // Add line connecting dimensions
-          self.drawLineToAxes(d);
-
           // Highlight axes labels
           self.highlightAxis(d, true);
         })
@@ -1089,19 +1092,16 @@ RulerChart.prototype.draw = function() {
           // Call generic mouseout function
           self.circleMouseout(d3.select(this), d);
 
-          // Remove lines (exclude 'main' lines)
-          self.removeSelection('.dataLine');
-
           // Unhighlight axis labels
           self.highlightAxis(d, false);
         })
       .on('click', function(d) {
-          // Call generic mouseout function
-          self.circleMouseout(d3.select(this), d);
-
           // Update line class
           self.removeSelection('.mainDataLine');
           self.svg.select('.dataLine').attr('class', 'mainDataLine');
+
+          // Call generic mouseout function
+          self.circleMouseout(d3.select(this), d);
 
           // Recompute x axis domains, centering on data value of clicked circle
           self.recenterDomains(+d.seriesIndex);
@@ -1118,11 +1118,11 @@ RulerChart.prototype.draw = function() {
           // Unhighlight axis labels
           self.highlightAxis(d, false);
 
-          // Display reset button
-          self.setElemDisplay('.reset-btn', true);
-
           // Update voronoi paths
           self.updateVoronoiPaths();
+
+          // Display reset button
+          self.setElemDisplay('.reset-btn', true);
       });
 
   // Add listeners to legend
@@ -1146,7 +1146,7 @@ RulerChart.prototype.draw = function() {
           // Unhighlight axis labels
           self.svg.selectAll('.axisLabel').classed('activeText', false);
 
-          // Remove lines (exclude 'main' lines)
+          // Remove lines
           self.removeSelection('.dataLine');
       })
       .on('click', function(p) {
@@ -1168,11 +1168,11 @@ RulerChart.prototype.draw = function() {
           var obj = {seriesIndex: +p};
           self.centerMainLineToAxes(obj);
 
-          // Display reset button
-          self.setElemDisplay('.reset-btn', true);
-
           // Update voronoi paths
           self.updateVoronoiPaths();
+
+          // Display reset button
+          self.setElemDisplay('.reset-btn', true);
       });
 
   // Reset chart back to original state
@@ -1316,9 +1316,6 @@ XYPlot.prototype.draw = function() {
         // Call generic mouseover function
         self.circleMouseover(d3.select(this), d);
 
-        // Add data lines
-        self.drawLineToAxes(d);
-
         // Add origin lines
         self.drawLineFromOrigin(d, true, false);
       })
@@ -1326,22 +1323,18 @@ XYPlot.prototype.draw = function() {
         // Call generic mouseout function
         self.circleMouseout(d3.select(this), d);
 
-        // Remove lines (exclude 'main' lines)
-        self.removeSelection('.dataLine');
+        // Remove origin line
         self.removeSelection('.originLine');
       })
       .on('click', function(d) {
-        // Call generic mouseout function
-        self.circleMouseout(d3.select(this), d);
-
-        // Display reset button
-        self.setElemDisplay('.reset-btn', true);
-
         // Update line class
         self.removeSelection('.mainDataLine');
         self.removeSelection('.mainOriginLine');
         self.svg.select('.dataLine').attr('class', 'mainDataLine');
         self.svg.select('.originLine').attr('class', 'mainOriginLine');
+
+        // Call generic mouseout function
+        self.circleMouseout(d3.select(this), d);
 
         // Recenter domain on clicked circle
         self.recenterDomains(d);
@@ -1358,6 +1351,9 @@ XYPlot.prototype.draw = function() {
 
         // Update voronoi paths
         self.updateVoronoiPaths();
+
+        // Display reset button
+        self.setElemDisplay('.reset-btn', true);
       });
 
   // Add listeners to legend
@@ -1378,16 +1374,13 @@ XYPlot.prototype.draw = function() {
         // Call generic legend mouseover function
         self.legendMouseout(d3.select(this), p);
 
-        // Remove lines (exclude 'main' lines)
+        // Remove lines
         self.removeSelection('.dataLine');
         self.removeSelection('.originLine');
       })
       .on('click', function(p) {
         // Call generic legend mouseover function
         self.legendMouseout(d3.select(this), p);
-
-        // Display reset button
-        self.setElemDisplay('.reset-btn', true);
 
         // Update line class
         // Lines are not data bound (as of now), so this might not be foolproof in ensuring
@@ -1416,6 +1409,9 @@ XYPlot.prototype.draw = function() {
 
         // Update voronoi paths
         self.updateVoronoiPaths();
+
+        // Display reset button
+        self.setElemDisplay('.reset-btn', true);
       });
 
   // Reset chart back to original state
@@ -1467,12 +1463,10 @@ XYPlot.prototype.addOriginCircle = function() {
   originCircle
       .on('mouseover', function() {
         // Add origin lines for all data points
-        self.svg.selectAll('.g-circle').each(function(d) {
-          self.drawLineFromOrigin(d, false, false);
-        });
+        self.svg.selectAll('.g-circle').each(function(d) { self.drawLineFromOrigin(d, false, false); });
       })
       .on('mouseout', function(d) {
-        // Remove lines (exclude 'main' lines)
+        // Remove lines
         self.removeSelection('.originLine');
       });
 }
@@ -1674,16 +1668,10 @@ ScatterPlot.prototype.draw = function() {
       .on('mouseover', function(d) {
         // Call generic mouseover function
         self.circleMouseover(d3.select(this), d);
-
-        // Add data lines
-        self.drawLineToAxes(d);
       })
       .on('mouseout', function(d) {
         // Call generic mouseout function
         self.circleMouseout(d3.select(this), d);
-
-        // Remove lines (exclude 'main' lines)
-        self.removeSelection('.dataLine');
       })
       .on('click', function(d) {
         // Call generic mouseout function
