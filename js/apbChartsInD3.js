@@ -43,12 +43,13 @@ BaseChart.prototype.setToDefaultParams = function() {
     colorRange:           ['#37B34A', '#008CCF', '#671E75', '#CB333B', '#ED8B00'],
     baseColor:            '#EBEBEB',
     opacity:              {start: 0.05, end: 0.5},
-    // Element sizes
+    // Shape size
     radius:               {normal: 5, large: 10},
-    // Transitions
+    // Transition
     transition:           {duration: 1250, durationShort: 1000, delay: 75},
     // Axis
-    ticks:                {widthCutoff: 500, upper: 4, lower: 2}
+    ticks:                {widthCutoff: 500, upper: 5, lower: 3},
+    tickSize:             0
   };
 
   for(var prop in defaultParams) {
@@ -62,11 +63,11 @@ BaseChart.prototype.setToDefaultParams = function() {
   this.setDelayRange();
 
   // Set width and height params
-  this.setWidthHeight();
+  this.setDerivedParams();
 }
 
 // Computes and sets width/height params from chart width/height
-BaseChart.prototype.setWidthHeight = function() {
+BaseChart.prototype.setDerivedParams = function() {
   // Set outer sizes and compute inner sizes
   this.config.outerWidth = parseInt(this.config.chart.style('width'));
   this.config.outerHeight = parseInt(this.config.chart.style('height'));
@@ -87,7 +88,8 @@ BaseChart.prototype.setWidthHeight = function() {
   this.config.legendOffset.y = this.config.radius.large * 3;
 
   // Set x-axis tick count
-  this.axis.ticks(this.tickCount());
+  this.axis.ticks(this.tickCount())
+           .tickSize(this.config.tickSize, this.config.tickSize);
 }
 
 BaseChart.prototype.calculateLength = function(b, a) {
@@ -144,6 +146,7 @@ BaseChart.prototype.setConfig = function() {
 
   // Axes
   var ticks;
+  var tickSize;
 
   // Create config object
   this.config = {
@@ -168,7 +171,8 @@ BaseChart.prototype.setConfig = function() {
     opacity: opacity,
     radius: radius,
     transition: transition,
-    ticks: ticks
+    ticks: ticks,
+    tickSize: tickSize
   };
 
   // Set to default params
@@ -728,7 +732,7 @@ BaseChart.prototype.addChartDataPoints = function() {
                           .attr('transform', this.getPaddingTransform());
 
   this.series.each(function(p) {
-      // Add circles for all series dataObjects
+      // Add circles for all series.dataObjects
       d3.select(this).selectAll('.g-circle')
         .data(self.seriesData[p].dataObjects)
       .enter().append('g')
@@ -1013,8 +1017,8 @@ BaseChart.prototype.reSize = function() {
   // Remove lines
   this.removeSelection('.g-dataLine path');
 
-  // Recompute width and height from chart width and height
-  this.setWidthHeight();
+  // Recompute all parameters that depend on chart width and height
+  this.setDerivedParams();
 
   // Update svg width and height
   this.config.chart.select('.chart-container')
