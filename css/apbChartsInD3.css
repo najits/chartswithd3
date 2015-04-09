@@ -19,11 +19,11 @@ text {
   fill: #222;
 }
 
-.dataLabels {
+.dataLabel {
   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
-.grid {
+.gridlines {
   fill: none;
   stroke: #666666;
   stroke-width: 0.5;
@@ -33,13 +33,13 @@ text {
 .dataLine,
 .mainDataLine {
   fill: none;
-  stroke-width: 0.5;
-  stroke-opacity: 1.0;
+  stroke-width: 1.0;
+  stroke-opacity: 0.7;
   pointer-events: none;
 }
 
-.line.originLine,
-.line.mainOriginLine {
+.originLine,
+.mainOriginLine {
   fill: none;
   stroke-width: 0.5;
   stroke-opacity: 1.0;

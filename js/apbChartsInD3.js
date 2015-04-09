@@ -1,16 +1,5 @@
 /* Helper functions */
 
-// // Fewer Lambdas in D3.js
-// // http://phrogz.net/fewer-lambdas-in-d3-js
-// function F(name) {
-//   var v, params = Array.prototype.slice.call(arguments, 1);
-//   return function(o) {
-//     return (typeof(v=o[name]) === 'function' ? v.apply(o, params) : v);
-//   };
-// }
-// // Returns the first argument passed in
-// function I(d) { return d; }
-
 // Convenient Interitance
 // http://phrogz.net/JS/classes/OOPinJS2.html
 Function.prototype.inheritsFrom = function(parentClassOrObject) {
@@ -279,56 +268,54 @@ BaseChart.prototype.updateLegendLocation = function() {
           .attr('transform', 'translate(' + (this.config.padding.left + this.config.width - this.config.legendOffset.x) + ', ' + (this.config.padding.top + this.config.height + this.config.legendOffset.y) + ')');
 }
 
+// Adds 'g' container for data labels
+BaseChart.prototype.addDataLabelContainer = function() {
+  this.svg.append('g')
+          .attr('class', 'g-dataLabel')
+          .attr('transform', this.getPaddingTransform());
+}
+
 // Adds data labels
 BaseChart.prototype.addDataLabel = function(d) {
   var self = this;
 
   // Add x-axis labels
   self.xAxes.filter(function(p) { return p === d.xAxisName; })
-            .each(function(p) {
-              d3.select(this)
-                .append('text')
-                .attr('class', 'dataLabels x')
-                .text(d.xValue.toFixed(2))
-                .attr('x', self.x[p](d.xValue))
-                .style('text-anchor', 'middle')
-                .classed('activeText', true);
+              .each(function(p) {
+                  var label = self.svg.select('.g-dataLabel')
+                                .append('text')
+                                .attr('class', 'dataLabel')
+                                .text(d.xValue.toFixed(2))
+                                .attr('x', self.x[p](d.xValue))
+                                .attr('y', self.xSpacingInY(p))
+                                .style('text-anchor', 'middle')
+                                .classed('activeText', true);
 
-              if(d3.keys(self.dimensions.x).length > 1) {
-                d3.select(this).selectAll('.dataLabels.x')
-                    .attr('y', self.config.radius.large * -1.5);
-              } else {
-                d3.select(this).selectAll('.dataLabels.x')
-                    .attr('dy', -1 * self.config.dy.xOffset + 'em')
-                    .attr('dx', self.config.dy.xOffset + 'em');
-              }
+                  if(d3.keys(self.dimensions.x).length > 1) {
+                    label
+                        .attr('dy', -1.5 * self.config.radius.large + 'px');
+                  } else {
+                    label
+                        .attr('dy', -1.0 * self.config.dy.xOffset + 'em')
+                        .attr('dx', self.config.dy.xOffset + 'em');
+                  }
             });
 
   // Add y-axis labels if y-axes exist
   if(self.yAxes != null) {
     self.yAxes.filter(function(p) { return p === d.yAxisName; })
             .each(function(p) {
-              d3.select(this)
+              self.svg.select('.g-dataLabel')
                 .append('text')
-                .attr('class', 'dataLabels y')
+                .attr('class', 'dataLabel')
                 .text(d.yValue.toFixed(2))
+                .attr('x', self.ySpacingInX(p))
                 .attr('y', self.y[p](d.yValue))
                 .attr('dy', self.config.dy.middle + 'em')
                 .attr('dx', self.config.dy.xOffset + 'em')
                 .style('text-anchor', 'start')
                 .classed('activeText', true);
             });
-  }
-}
-
-// Remove data labels
-BaseChart.prototype.removeDataLabel = function(d) {
-  // Remove x-axis labels
-  this.xAxes.filter(function(p) { return p === d.xAxisName; }).select('.dataLabels').remove();
-
-  // Remove y-axis labels if y-axes exist
-  if(this.yAxes != null) {
-    this.yAxes.filter(function(p) { return p === d.yAxisName; }).select('.dataLabels').remove();
   }
 }
 
@@ -658,8 +645,8 @@ BaseChart.prototype.addChartGridLines = function() {
   // Remove existing gridlines if any
   this.removeSelection('.gridlines');
 
-  // Add a 'g' element to house gridlines
-  var gridLines = this.svg.append('g')
+  // Add a 'g' element to house gridlines (insert before dimensions/axes)
+  var gridLines = this.svg.insert('g', '.dimension')
                       .attr('class', 'gridlines')
                       .attr('transform', this.getPaddingTransform());
 
@@ -681,22 +668,22 @@ BaseChart.prototype.addChartGridLines = function() {
                               });
 
   // Add grid lines
-  gridLines.selectAll('line.grid.x')
+  gridLines.selectAll('.gridline-x')
                 .data(xTicks)
              .enter().append('line')
                 .attr({
-                        'class': 'grid x',
+                        'class': 'gridline-x',
                         'x1': function(d) { return self.x[xAxis](d); },
                         'x2': function(d) { return self.x[xAxis](d); },
                         'y1': 0,
                         'y2': self.config.height
                 });
 
-  gridLines.selectAll('line.grid.y')
+  gridLines.selectAll('.gridline-y')
                 .data(yTicks)
              .enter().append('line')
                 .attr({
-                        'class': 'grid y',
+                        'class': 'gridline-y',
                         'x1': 0,
                         'x2': self.config.width,
                         'y1': function(d) { return self.y[yAxis](d); },
@@ -704,7 +691,7 @@ BaseChart.prototype.addChartGridLines = function() {
                 });
 
   // Animate
-  gridLines.selectAll('line.grid')
+  gridLines.selectAll('line')
     .style('stroke-opacity', 0.0)
      .transition()
          .delay(self.config.transition.durationShort)
@@ -736,7 +723,7 @@ BaseChart.prototype.addChartDataPoints = function() {
   // Add g element for each data series
   this.series = this.svg.selectAll('.g-series')
                           .data(d3.keys(self.seriesData))
-                        .enter().append('g')
+                        .enter().insert('g', '.g-dataLabel')
                           .attr('class', 'g-series')
                           .attr('transform', this.getPaddingTransform());
 
@@ -812,8 +799,8 @@ BaseChart.prototype.circleMouseout = function(elem, d) {
   // Return circle radius to normal
   elem.select('.circle').attr('r', this.config.radius.normal);
 
-  // Remove labels
-  this.removeDataLabel(d);
+  // Remove data labels
+  this.removeSelection('.dataLabel');
 
   // Un-highlight legend
   this.legend.filter(function(p) { return +p === +d.seriesIndex; })
@@ -848,8 +835,10 @@ BaseChart.prototype.legendMouseout = function(elem, p) {
               .filter(function(d) { return +d.seriesIndex === +p; })
               .each(function(d) {
                 d3.select(this).select('.circle').attr('r', self.config.radius.normal);
-                self.removeDataLabel(d);
               });
+
+  // Remove data labels
+  self.removeSelection('.dataLabel');
 }
 
 // Highlight axisLabels matching d's axes
@@ -861,6 +850,13 @@ BaseChart.prototype.highlightAxis = function(d, bool) {
     this.yAxes.filter(function(p) { return p === d.yAxisName; })
         .select('.axisLabel').classed('activeText', bool);
   };
+}
+
+// Adds 'g' container for data lines
+BaseChart.prototype.addDataLineContainer = function() {
+  this.svg.append('g')
+          .attr('class', 'g-dataLine')
+          .attr('transform', this.getPaddingTransform());
 }
 
 // Returns the path for a given data point to axes
@@ -877,9 +873,9 @@ BaseChart.prototype.pathToAxes = function(d) {
 
 // Draws line from data point to axes
 BaseChart.prototype.drawLineToAxes = function(d) {
-  this.svg.append('path')
-    .attr('class', 'line dataLine')
-    .attr('transform', this.getPaddingTransform())
+  this.svg.select('.g-dataLine')
+    .append('path')
+    .attr('class', 'dataLine')
     .attr('d', this.pathToAxes(d))
     .style('stroke', this.config.colorScale(d.seriesIndex));
 }
@@ -924,10 +920,12 @@ BaseChart.prototype.addVoronoiPaths = function() {
                   .x(function(d) { return self.x[d.xAxisName](d.xValue); })
                   .y(function(d) { return self.yValueRange(d); });
 
-  // Create a 'g' container for voronoi polygons
-  this.removeSelection('.voronoi-group');
-  var voronoiPaths = this.svg.append('g')
-                          .attr('class', 'voronoi-group')
+  // Remove existing voronoi (if any)
+  this.removeSelection('.g-voronoi');
+
+  // Create a 'g' container for voronoi polygons (insert before g-series)
+  var voronoiPaths = this.svg.insert('g', '.g-series')
+                          .attr('class', 'g-voronoi')
                           .attr('transform', this.getPaddingTransform());
 
   // Add voronoi polygon paths to chart
@@ -950,8 +948,8 @@ BaseChart.prototype.addVoronoiPaths = function() {
       // d3.select(this).classed('voronoi-path-select', true);
 
       var mouseCoord = d3.mouse(this);
-      var length = self.calculateLength(mouseCoord, circleCoord);
-      d3.select(d.circle).attr('r', config.radiusScale(length));
+      var distToCircle = self.calculateLength(mouseCoord, circleCoord);
+      d3.select(d.circle).attr('r', config.radiusScale(distToCircle));
     })
     .on('mouseout', function(d) {
       // self.svg.selectAll('.voronoi-path').classed('voronoi-path-enabled', false);
@@ -989,6 +987,12 @@ BaseChart.prototype.draw = function() {
   // Add chart axes
   this.addChartAxes();
 
+  // Add a container for data lines
+  this.addDataLineContainer();
+
+  // Add a container for data labels
+  this.addDataLabelContainer();
+
   // Add a reset button
   this.addResetBtn();
 
@@ -1001,7 +1005,7 @@ BaseChart.prototype.draw = function() {
 // Parent resize function to handle generic resizing tasks
 BaseChart.prototype.reSize = function() {
   // Remove lines
-  this.removeSelection('.line');
+  this.removeSelection('.g-dataLine path');
 
   // Recompute width and height from chart width and height
   this.setWidthHeight();
@@ -1060,12 +1064,11 @@ RulerChart.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
-  // Add voronoi paths
-  // (before data points in order to retain mouse events on data points)
-  this.addVoronoiPaths();
-
   // Add chart data points
   this.addChartDataPoints();
+
+  // Add voronoi paths
+  this.addVoronoiPaths();
 
   // Carry 'this' context in 'self'
   var self = this;
@@ -1098,7 +1101,7 @@ RulerChart.prototype.draw = function() {
 
           // Update line class
           self.removeSelection('.mainDataLine');
-          self.svg.select('.dataLine').attr('class', 'line mainDataLine');
+          self.svg.select('.dataLine').attr('class', 'mainDataLine');
 
           // Recompute x axis domains, centering on data value of clicked circle
           self.recenterDomains(+d.seriesIndex);
@@ -1149,10 +1152,10 @@ RulerChart.prototype.draw = function() {
       .on('click', function(p) {
           // Update line class
           self.removeSelection('.mainDataLine');
-          self.svg.select('.dataLine').attr('class', 'line mainDataLine');
+          self.svg.select('.dataLine').attr('class', 'mainDataLine');
 
           // Remove labels
-          self.removeSelection('.dataLabels');
+          self.removeSelection('.dataLabel');
 
           // Recompute x axis domains, centering on data value of clicked circle
           self.recenterDomains(+p);
@@ -1178,8 +1181,8 @@ RulerChart.prototype.draw = function() {
       self.setElemDisplay('.reset-btn', false);
 
       // Remove lines and labels
-      self.removeSelection('.line');
-      self.removeSelection('.dataLabels');
+      self.removeSelection('.g-dataLine path');
+      self.removeSelection('.dataLabel');
 
       // Reset x axis domain to original extent
       d3.keys(self.dimensions.x).map(function(p) {
@@ -1288,15 +1291,14 @@ XYPlot.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
-  // Add voronoi paths
-  // (before data points in order to retain mouse events on data points)
-  this.addVoronoiPaths();
+  // Add gridlines
+  this.addChartGridLines();
 
   // Add chart data points
   this.addChartDataPoints();
 
-  // Add gridlines
-  this.addChartGridLines();
+  // Add voronoi paths
+  this.addVoronoiPaths();
 
   // Carry 'this' context in 'self'
   var self = this;
@@ -1338,8 +1340,8 @@ XYPlot.prototype.draw = function() {
         // Update line class
         self.removeSelection('.mainDataLine');
         self.removeSelection('.mainOriginLine');
-        self.svg.select('.dataLine').attr('class', 'line mainDataLine');
-        self.svg.select('.originLine').attr('class', 'line mainOriginLine');
+        self.svg.select('.dataLine').attr('class', 'mainDataLine');
+        self.svg.select('.originLine').attr('class', 'mainOriginLine');
 
         // Recenter domain on clicked circle
         self.recenterDomains(d);
@@ -1392,8 +1394,8 @@ XYPlot.prototype.draw = function() {
         // that the selected dataline/originLine will correspond to subsequent circle selection
         self.removeSelection('.mainDataLine');
         self.removeSelection('.mainOriginLine');
-        self.svg.select('.dataLine').attr('class', 'line mainDataLine');
-        self.svg.select('.originLine').attr('class', 'line mainOriginLine');
+        self.svg.select('.dataLine').attr('class', 'mainDataLine');
+        self.svg.select('.originLine').attr('class', 'mainOriginLine');
         // Remove remamining lines (needed for when the data series has multiple data points)
         self.removeSelection('.dataLine');
         self.removeSelection('.originLine');
@@ -1422,8 +1424,8 @@ XYPlot.prototype.draw = function() {
       self.setElemDisplay('.reset-btn', false);
 
       // Remove any lines and data labels
-      self.removeSelection('.line');
-      self.removeSelection('.dataLabels');
+      self.removeSelection('.g-dataLine path');
+      self.removeSelection('.dataLabel');
 
       // Reset domanins back to original values
       d3.keys(self.dimensions.x).map(function(p) { self.x[p].domain(self.dimensions.x[p].calcs.origExtent); });
@@ -1480,7 +1482,7 @@ XYPlot.prototype.centerMainLineFromOrigin = function(d) {
   this.svg.select('.mainOriginLine')
     .transition()
         .duration(this.config.transition.durationShort)
-      .attr('d', this.pathFromOrigin(d, false, false));
+      .attr('d', this.pathFromOrigin(d, false));
 }
 
 // Recenters domains on 'd'
@@ -1554,9 +1556,9 @@ XYPlot.prototype.reScale = function() {
 XYPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
   var self = this;
 
-  var path = self.svg.append('path')
-              .attr('class', 'line originLine')
-              .attr('transform', this.getPaddingTransform());
+  var path = self.svg.select('.g-dataLine')
+              .append('path')
+              .attr('class', 'originLine');
 
   if(!animate) {
     path.attr('d', self.pathFromOrigin(d, extrapolate));
@@ -1655,15 +1657,14 @@ ScatterPlot.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
-  // Add voronoi paths
-  // (before data points in order to retain mouse events on data points)
-  this.addVoronoiPaths();
+  // Add gridlines
+  this.addChartGridLines();
 
   // Add chart data points
   this.addChartDataPoints();
 
-  // Add gridlines
-  this.addChartGridLines();
+  // Add voronoi paths
+  this.addVoronoiPaths();
 
   // Carry 'this' context in 'self'
   var self = this;
