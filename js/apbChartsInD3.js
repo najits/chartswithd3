@@ -284,41 +284,41 @@ BaseChart.prototype.addDataLabel = function(d) {
   var self = this;
 
   // Add x-axis labels
-  self.xAxes.filter(function(p) { return p === d.xAxisName; })
-              .each(function(p) {
-                  var label = self.svg.select('.g-dataLabel')
-                                .append('text')
-                                .attr('class', 'dataLabel')
-                                .text(d.xValue.toFixed(2))
-                                .attr('x', self.x[p](d.xValue))
-                                .attr('y', self.xSpacingInY(p))
-                                .style('text-anchor', 'middle')
-                                .classed('activeText', true);
+  self.axes.x.filter(function(p) { return p === d.xAxisName; })
+            .each(function(p) {
+                var label = self.svg.select('.g-dataLabel')
+                              .append('text')
+                              .attr('class', 'dataLabel')
+                              .text(d.xValue.toFixed(2))
+                              .attr('x', self.scales.x[p](d.xValue))
+                              .attr('y', self.xAxisSpacing(p))
+                              .style('text-anchor', 'middle')
+                              .classed('activeText', true);
 
-                  if(d3.keys(self.dimensions.x).length > 1) {
-                    label
-                        .attr('dy', -1.5 * self.config.radius.large + 'px');
-                  } else {
-                    label
-                        .attr('dy', -1.0 * self.config.dy.xOffset + 'em')
-                        .attr('dx', self.config.dy.xOffset + 'em');
-                  }
-            });
+                if(d3.keys(self.dimensions.x).length > 1) {
+                  label
+                      .attr('dy', -1.5 * self.config.radius.large + 'px');
+                } else {
+                  label
+                      .attr('dy', -1.0 * self.config.dy.xOffset + 'em')
+                      .attr('dx', self.config.dy.xOffset + 'em');
+                }
+          });
 
   // Add y-axis labels if y-axes exist
-  if(self.yAxes != null) {
-    self.yAxes.filter(function(p) { return p === d.yAxisName; })
+  if(self.axes.y != null) {
+    self.axes.y.filter(function(p) { return p === d.yAxisName; })
             .each(function(p) {
-              self.svg.select('.g-dataLabel')
-                .append('text')
-                .attr('class', 'dataLabel')
-                .text(d.yValue.toFixed(2))
-                .attr('x', self.ySpacingInX(p))
-                .attr('y', self.y[p](d.yValue))
-                .attr('dy', self.config.dy.middle + 'em')
-                .attr('dx', self.config.dy.xOffset + 'em')
-                .style('text-anchor', 'start')
-                .classed('activeText', true);
+                self.svg.select('.g-dataLabel')
+                  .append('text')
+                  .attr('class', 'dataLabel')
+                  .text(d.yValue.toFixed(2))
+                  .attr('x', self.yAxisSpacing(p))
+                  .attr('y', self.scales.y[p](d.yValue))
+                  .attr('dy', self.config.dy.middle + 'em')
+                  .attr('dx', self.config.dy.xOffset + 'em')
+                  .style('text-anchor', 'start')
+                  .classed('activeText', true);
             });
   }
 }
@@ -368,39 +368,39 @@ BaseChart.prototype.destroyChart = function() {
 // Set x-axis range
 BaseChart.prototype.setXAxisRange = function() {
   var self = this;
-  d3.keys(self.dimensions.x).map(function(p) { self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
+  d3.keys(self.dimensions.x).map(function(p) { self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
 }
 
 // Set y-axis range
 BaseChart.prototype.setYAxisRange = function() {
   var self = this;
-  d3.keys(self.dimensions.y).map(function(p) { self.y[p].range([self.config.height, 0]); });
+  d3.keys(self.dimensions.y).map(function(p) { self.scales.y[p].range([self.config.height, 0]); });
 }
 
 // Set x-spacing-in y-range
-BaseChart.prototype.setXSpacingInYRange = function() {
+BaseChart.prototype.setXAxisSpacingRange = function() {
   var self = this;
 
   // If provided multiple x-axes, space x-axes vertically across chart height
   if(d3.keys(self.dimensions.x).length > 1) {
-    this.xSpacingInY.rangePoints([0, self.config.height], self.config.ordinalPadding)
+    this.xAxisSpacing.rangePoints([0, self.config.height], self.config.ordinalPadding)
   } else {   // Otherwise solve for appropriate y-intercept
     var yAxis = d3.keys(self.dimensions.y)[0];
-    var yDomain = self.y[yAxis].domain();
-    this.yIntercept = Math.min(Math.max(0, yDomain[0]), yDomain[1]);
-    this.xSpacingInY.range([self.y[yAxis](this.yIntercept), self.y[yAxis](this.yIntercept)]);
+    var yDomain = self.scales.y[yAxis].domain();
+    this.intercept.y = Math.min(Math.max(0, yDomain[0]), yDomain[1]);
+    this.xAxisSpacing.range([self.scales.y[yAxis](this.intercept.y), self.scales.y[yAxis](this.intercept.y)]);
   }
 }
 
 // Set y-spacing-in x-range
-BaseChart.prototype.setYSpacingInXRange = function() {
+BaseChart.prototype.setYAxisSpacingRange = function() {
   var self = this;
 
-  if(this.ySpacingInX != null) {
+  if(this.yAxisSpacing != null) {
     var xAxis = d3.keys(self.dimensions.x)[0];
-    var xDomain = self.x[xAxis].domain();
-    this.xIntercept = Math.min(Math.max(0, xDomain[0]), xDomain[1]); // Solve for appropriate x-intercept
-    this.ySpacingInX.range([self.x[xAxis](this.xIntercept), self.x[xAxis](this.xIntercept)]);
+    var xDomain = self.scales.x[xAxis].domain();
+    this.intercept.x = Math.min(Math.max(0, xDomain[0]), xDomain[1]); // Solve for appropriate x-intercept
+    this.yAxisSpacing.range([self.scales.x[xAxis](this.intercept.x), self.scales.x[xAxis](this.intercept.x)]);
   }
 }
 
@@ -408,13 +408,15 @@ BaseChart.prototype.setYSpacingInXRange = function() {
 BaseChart.prototype.processChartData = function() {
   this.dimensions = {};
   this.seriesData = {};
+  this.scales = {};
+  this.intercept = {};
 
   var self = this;
 
   // Extract xAxis.axes
   if(self.config.chartData.xAxis != null) {
       self.dimensions.x = {};
-      self.x = {};
+      self.scales.x = {};
       self.config.chartData.xAxis.axes.forEach(function(d, i) {
         self.dimensions.x[d.name] = {};
         self.dimensions.x[d.name].type = 'x';
@@ -422,12 +424,12 @@ BaseChart.prototype.processChartData = function() {
         self.dimensions.x[d.name].dataObjects = [];
         self.dimensions.x[d.name].calcs = {};
         self.dimensions.x[d.name].calcs.floorXpx = 0; // floorXpx is used by RulerChart
-        self.x[d.name] = d3.scale.linear();
+        self.scales.x[d.name] = d3.scale.linear();
       })
       self.setXAxisRange();
 
       // Scale to space x-axes vertically
-      self.xSpacingInY = d3.scale.ordinal().domain(d3.keys(self.dimensions.x));
+      self.xAxisSpacing = d3.scale.ordinal().domain(d3.keys(self.dimensions.x));
   }
 
   // If provided multiple x-axes, ignore yAxis
@@ -435,20 +437,20 @@ BaseChart.prototype.processChartData = function() {
     // Otherwise, extract yAxis.axes
     if(self.config.chartData.yAxis != null) {
         self.dimensions.y = {};
-        self.y = {};
+        self.scales.y = {};
         self.config.chartData.yAxis.axes.forEach(function(d, i) {
           self.dimensions.y[d.name] = {};
           self.dimensions.y[d.name].type = 'y';
           self.dimensions.y[d.name].parameters = d.parameters;
           self.dimensions.y[d.name].dataObjects = [];
           self.dimensions.y[d.name].calcs = {};
-          self.y[d.name] = d3.scale.linear();
+          self.scales.y[d.name] = d3.scale.linear();
         })
         self.setYAxisRange();
     }
 
     // Scale to space y-axis horizontally
-    self.ySpacingInX = d3.scale.ordinal().domain(d3.keys(self.dimensions.y));
+    self.yAxisSpacing = d3.scale.ordinal().domain(d3.keys(self.dimensions.y));
   }
 
   // Extract series.data
@@ -534,40 +536,36 @@ BaseChart.prototype.processChartData = function() {
       // Incorporate max parameter
       self.dimensions[axisType][axis].calcs.origExtent[1] = d3.max([self.dimensions[axisType][axis].calcs.origExtent[1], self.dimensions[axisType][axis].parameters.max]);
 
-      // Set domains
-      var extent = self.dimensions[axisType][axis].calcs.origExtent;
-      if(axisType === 'x') {
-          self.x[axis].domain(extent);
-      } else if (axisType === 'y') {
-          self.y[axis].domain(extent);
-      }
+      // Set scale domain
+      self.scales[axisType][axis].domain(self.dimensions[axisType][axis].calcs.origExtent);
     }
   };
 
-  // Set ranages for xSpacingInY and ySpacingInX
-  self.setXSpacingInYRange();
-  self.setYSpacingInXRange();
+  // Set ranges for xAxisSpacing and yAxisSpacing
+  self.setXAxisSpacingRange();
+  self.setYAxisSpacingRange();
 }
 
 // Adds x and y axes and axis labels
 BaseChart.prototype.addChartAxes = function() {
   var self = this;
+  self.axes = {};
 
   // Process x axes
   if(d3.keys(self.dimensions.x).length > 0) {
       // Add a group element for each x-axis
-      self.xAxes = self.svg.selectAll('.x-axis')
+      self.axes.x = self.svg.selectAll('.x-axis')
                       .data(d3.keys(self.dimensions.x))
                     .enter().append('g')
                       .attr('class', 'dimension');
       self.updateXAxesLocation();
 
       // Add x-axes
-      self.xAxes.append('g').attr('class', 'axis');
-      self.generateAxes(self.xAxes, 'x');
+      self.axes.x.append('g').attr('class', 'axis');
+      self.generateAxes(self.axes.x, 'x');
 
       // Add axis labels
-      self.xAxes.append('text')
+      self.axes.x.append('text')
           .attr('class', 'axisLabel x')
           .text(function(p) { return self.dimensions.x[p].parameters.displayName; });
       self.positionXAxisLabel();
@@ -576,70 +574,60 @@ BaseChart.prototype.addChartAxes = function() {
   // Process y axes
   if(d3.keys(self.dimensions.y).length > 0) {
     // Add a group element for y-axis
-    self.yAxes = self.svg.selectAll('.y-axis')
+    self.axes.y = self.svg.selectAll('.y-axis')
                     .data(d3.keys(self.dimensions.y))
                   .enter().append('g')
                     .attr('class', 'dimension');
     self.updateYAxesLocation();
 
     // Add y-axis
-    self.yAxes.append('g').attr('class', 'axis');
-    self.generateAxes(self.yAxes, 'y');
+    self.axes.y.append('g').attr('class', 'axis');
+    self.generateAxes(self.axes.y, 'y');
 
     // Add y-axis labels
-    self.yAxes.append('text')
-              .attr('class', 'axisLabel y')
-              .attr('transform', 'rotate(-90)')
-              .attr('dy', self.config.dy.yOffset + 'em')
-              .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
+    self.axes.y.append('text')
+        .attr('class', 'axisLabel y')
+        .attr('transform', 'rotate(-90)')
+        .attr('dy', self.config.dy.yOffset + 'em')
+        .text(function(p) { return self.dimensions.y[p].parameters.displayName; });
   }
 }
 
 // Updates x-axis location
 BaseChart.prototype.updateXAxesLocation = function(duration) {
   var self = this;
-  this.xAxes.transition()
+  this.axes.x.transition()
       .duration(function() { return duration ? duration : 0; })
     .attr('transform', function(p) {
-        return 'translate(' + self.config.padding.left + ', ' + (self.config.padding.top + self.xSpacingInY(p)) + ')';
+        return 'translate(' + self.config.padding.left + ', ' + (self.config.padding.top + self.xAxisSpacing(p)) + ')';
       });
 }
 
 // Updates y-axis location
 BaseChart.prototype.updateYAxesLocation = function(duration) {
   var self = this;
-  if(this.yAxes != null) {
-    this.yAxes.transition()
+  if(this.axes.y != null) {
+    this.axes.y.transition()
         .duration(function() { return duration ? duration : 0; })
       .attr('transform', function(p) {
-          return 'translate(' + (self.config.padding.left + self.ySpacingInX(p)) + ', ' + self.config.padding.top + ')';
+          return 'translate(' + (self.config.padding.left + self.yAxisSpacing(p)) + ', ' + self.config.padding.top + ')';
         });
   }
 }
 
 // Generates axes on selection
 BaseChart.prototype.generateAxes = function(sel, type, duration) {
-  var self = this;
-
-  if(duration == null) { duration = self.config.transition.duration; }
-
   if(sel != null) {
-    if(type != null) {
-      if(type === 'x') {
-        orient = 'bottom';
-        scale = self.x;
-      } else if(type === 'y') {
-        orient = 'left';
-        scale = self.y;
-      }
+    var self = this;
+    var orient = (type === 'y') ? 'left' : 'bottom';
+    duration = (duration != null) ? duration : self.config.transition.duration;
 
-      sel.selectAll('.axis').each(function(p) {
-                                    d3.select(this)
-                                      .transition()
-                                        .duration(duration)
-                                      .call(self.axis.orient(orient).scale(scale[p]));
-                                  });
-    }
+    sel.selectAll('.axis').each(function(p) {
+                                  d3.select(this)
+                                    .transition()
+                                      .duration(duration)
+                                    .call(self.axis.orient(orient).scale(self.scales[type][p]));
+                                });
   }
 }
 
@@ -655,48 +643,46 @@ BaseChart.prototype.addChartGridLines = function() {
                       .attr('transform', this.getPaddingTransform());
 
   // Get axes ticks; filter out intercepts and domain ends
-  var xAxis = d3.keys(self.dimensions.x)[0];
-  var xTicks = self.x[xAxis].ticks(self.tickCount())
-                            .filter(function(d) {
-                                return (d.toFixed(5) !== self.xIntercept.toFixed(5))
-                                    && (d.toFixed(5) !== self.x[xAxis].domain()[0].toFixed(5))
-                                    && (d.toFixed(5) !== self.x[xAxis].domain()[1].toFixed(5));
+  var ticks = {};
+  d3.keys(self.dimensions).map(function(a) {
+      ticks[a] = {};
+    d3.keys(self.dimensions[a]).map(function(p) {
+      ticks[a].name = p;
+      ticks[a].data = self.scales[a][p].ticks(self.tickCount())
+                              .filter(function(d) {
+                                return (d.toFixed(5) !== self.intercept[a].toFixed(5))
+                                    && (d.toFixed(5) !== self.scales[a][p].domain()[0].toFixed(5))
+                                    && (d.toFixed(5) !== self.scales[a][p].domain()[1].toFixed(5));
                               });
-
-  var yAxis = d3.keys(self.dimensions.y)[0];
-  var yTicks = self.y[yAxis].ticks(self.tickCount())
-                            .filter(function(d) {
-                                return (d.toFixed(5) !== self.yIntercept.toFixed(5))
-                                    && (d.toFixed(5) !== self.y[yAxis].domain()[0].toFixed(5))
-                                    && (d.toFixed(5) !== self.y[yAxis].domain()[1].toFixed(5));
-                              });
+    })
+  });
 
   // Add grid lines
   gridLines.selectAll('.gridline-x')
-                .data(xTicks)
+                .data(ticks.x.data)
              .enter().append('line')
                 .attr({
                         'class': 'gridline-x',
-                        'x1': function(d) { return self.x[xAxis](d); },
-                        'x2': function(d) { return self.x[xAxis](d); },
+                        'x1': function(d) { return self.scales.x[ticks.x.name](d); },
+                        'x2': function(d) { return self.scales.x[ticks.x.name](d); },
                         'y1': 0,
                         'y2': self.config.height
                 });
 
   gridLines.selectAll('.gridline-y')
-                .data(yTicks)
+                .data(ticks.y.data)
              .enter().append('line')
                 .attr({
                         'class': 'gridline-y',
                         'x1': 0,
                         'x2': self.config.width,
-                        'y1': function(d) { return self.y[yAxis](d); },
-                        'y2': function(d) { return self.y[yAxis](d); }
+                        'y1': function(d) { return self.scales.y[ticks.y.name](d); },
+                        'y2': function(d) { return self.scales.y[ticks.y.name](d); }
                 });
 
   // Animate
   gridLines.selectAll('line')
-    .style('stroke-opacity', 0.0)
+    .style('stroke-opacity', 0)
      .transition()
          .delay(self.config.transition.durationShort)
          .duration(self.config.transition.durationShort)
@@ -706,17 +692,17 @@ BaseChart.prototype.addChartGridLines = function() {
 // Position x-axis labels
 BaseChart.prototype.positionXAxisLabel = function() {
   if(d3.keys(this.dimensions.x).length > 1) {
-    this.xAxes.select('.axisLabel.x')
+    this.axes.x.select('.axisLabel.x')
               .attr('x', -1 * this.config.radius.large);
   } else {
-    this.xAxes.select('.axisLabel.x')
+    this.axes.x.select('.axisLabel.x')
               .attr('x', this.config.width)
               .attr('dy', -1 * this.config.dy.xOffset + 'em');
   }
 }
 
 BaseChart.prototype.yValueRange = function(d) {
-  return (d.yAxisName != null) ? this.y[d.yAxisName](d.yValue) : this.xSpacingInY(d.xAxisName);
+  return (d.yAxisName != null) ? this.scales.y[d.yAxisName](d.yValue) : this.xAxisSpacing(d.xAxisName);
 }
 
 // Adds data points to charts
@@ -749,15 +735,15 @@ BaseChart.prototype.addChartDataPoints = function() {
       d3.select(this).selectAll('.g-circle')
         .attr('transform', function(d) {
             // Position circles at intercepts
-            var x = (d.yAxisName != null) ? self.ySpacingInX(d.yAxisName) : 0;
-            return 'translate(' + x + ', ' + self.xSpacingInY(d.xAxisName) + ')';
+            var x = (d.yAxisName != null) ? self.yAxisSpacing(d.yAxisName) : 0;
+            return 'translate(' + x + ', ' + self.xAxisSpacing(d.xAxisName) + ')';
           })
         .transition()
             .delay(function(d) { return config.delayScale(d.seriesIndex); })
             .duration(config.transition.duration)
           .attr('transform', function(d) {
               // Transition circles to xValue/yValue
-              return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.yValueRange(d) + ')';
+              return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.yValueRange(d) + ')';
           });
 
       // Animate look
@@ -853,11 +839,11 @@ BaseChart.prototype.legendMouseout = function(elem, p) {
 
 // Highlight axisLabels matching d's axes
 BaseChart.prototype.highlightAxis = function(d, bool) {
-  this.xAxes.filter(function(p) { return p === d.xAxisName; })
+  this.axes.x.filter(function(p) { return p === d.xAxisName; })
       .select('.axisLabel').classed('activeText', bool);
 
-  if(this.yAxes != null) {
-    this.yAxes.filter(function(p) { return p === d.yAxisName; })
+  if(this.axes.y != null) {
+    this.axes.y.filter(function(p) { return p === d.yAxisName; })
         .select('.axisLabel').classed('activeText', bool);
   };
 }
@@ -874,9 +860,9 @@ BaseChart.prototype.pathToAxes = function(d) {
   // var self = this;
   var coords = [];
 
-  coords.push([this.ySpacingInX(d.yAxisName), this.y[d.yAxisName](d.yValue)]);
-  coords.push([this.x[d.xAxisName](d.xValue), this.y[d.yAxisName](d.yValue)]);
-  coords.push([this.x[d.xAxisName](d.xValue), this.xSpacingInY(d.xAxisName)]);
+  coords.push([this.yAxisSpacing(d.yAxisName), this.scales.y[d.yAxisName](d.yValue)]);
+  coords.push([this.scales.x[d.xAxisName](d.xValue), this.scales.y[d.yAxisName](d.yValue)]);
+  coords.push([this.scales.x[d.xAxisName](d.xValue), this.xAxisSpacing(d.xAxisName)]);
 
   return this.line(coords);
 }
@@ -904,7 +890,7 @@ BaseChart.prototype.voronoiRollup = function(data) {
 
   var rollup = d3.nest()
                 .key(function(d) {
-                  return self.x[d.xAxisName](d.xValue).toFixed(5) + ',' + self.yValueRange(d).toFixed(5);
+                  return self.scales.x[d.xAxisName](d.xValue).toFixed(5) + ',' + self.yValueRange(d).toFixed(5);
                 })
                 .rollup(function(v) { return v[0]; })
                 .entries(data)
@@ -927,7 +913,7 @@ BaseChart.prototype.addVoronoiPaths = function() {
   // Create a voronoi layout
   this.voronoi = d3.geom.voronoi()
                   .clipExtent([[0, 0], [config.width, config.height]])
-                  .x(function(d) { return self.x[d.xAxisName](d.xValue); })
+                  .x(function(d) { return self.scales.x[d.xAxisName](d.xValue); })
                   .y(function(d) { return self.yValueRange(d); });
 
   // Remove existing voronoi (if any)
@@ -1034,12 +1020,12 @@ BaseChart.prototype.reSize = function() {
   // Update axis ranges
   this.setXAxisRange();
   this.setYAxisRange();
-  this.setXSpacingInYRange();
-  this.setYSpacingInXRange();
+  this.setXAxisSpacingRange();
+  this.setYAxisSpacingRange();
 
   // Re-draw axes
-  this.generateAxes(this.xAxes, 'x', 0);
-  this.generateAxes(this.yAxes, 'y', 0);
+  this.generateAxes(this.axes.x, 'x', 0);
+  this.generateAxes(this.axes.y, 'y', 0);
 
   // Re-position x-axis labels
   this.positionXAxisLabel();
@@ -1111,7 +1097,7 @@ RulerChart.prototype.draw = function() {
           self.recenterDomains(+d.seriesIndex);
 
           // Transition clicked circle instantaneously to avoid conflicts with listeners
-          d3.select(this).attr('transform', 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.xSpacingInY(d.xAxisName) + ')');
+          d3.select(this).attr('transform', 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.xAxisSpacing(d.xAxisName) + ')');
 
           // Re-draw and animate x axes and circles using new domains
           self.reScale();
@@ -1191,7 +1177,7 @@ RulerChart.prototype.draw = function() {
       // Reset x axis domain to original extent
       d3.keys(self.dimensions.x).map(function(p) {
         self.dimensions.x[p].calcs.floorXpx = 0;
-        self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]).domain(self.dimensions.x[p].calcs.origExtent);
+        self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]).domain(self.dimensions.x[p].calcs.origExtent);
       });
 
       // Re-draw and animate x axes and circles using new domains
@@ -1207,7 +1193,7 @@ RulerChart.prototype.draw = function() {
 RulerChart.prototype.pathToAxes = function(d) {
   var self = this;
   return self.line(d3.keys(self.dimensions.x).map(function(p) {
-                return [self.x[p](self.seriesData[d.seriesIndex].dataObjects.filter(function(dd) { return dd.xAxisName === p; })[0].xValue), self.xSpacingInY(p)];
+                return [self.scales.x[p](self.seriesData[d.seriesIndex].dataObjects.filter(function(dd) { return dd.xAxisName === p; })[0].xValue), self.xAxisSpacing(p)];
           }));
 }
 
@@ -1222,21 +1208,21 @@ RulerChart.prototype.recenterDomains = function(d) {
   d3.keys(self.dimensions.x).map(function(p) {
       // Reset scale to original state
       self.dimensions.x[p].calcs.floorXpx = 0;
-      self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
+      self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
               .domain(self.dimensions.x[p].calcs.origExtent);
 
       // Recompute scale, centering on selected series
-      minMax = self.x[p].domain();
+      minMax = self.scales.x[p].domain();
       centerVal = self.seriesData[d].dataObjects.filter(function(dd) { return dd.xAxisName === p; })[0].xValue;
       distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
       maxDistFromCenter = d3.max(distFromCenter);
-      self.x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
+      self.scales.x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
 
       // Adjust for axis floor parameter
       if((centerVal - maxDistFromCenter) < self.dimensions.x[p].parameters.floor)
       {
-        self.dimensions.x[p].calcs.floorXpx = self.x[p](self.dimensions.x[p].parameters.floor);
-        self.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
+        self.dimensions.x[p].calcs.floorXpx = self.scales.x[p](self.dimensions.x[p].parameters.floor);
+        self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
             .domain([self.dimensions.x[p].parameters.floor, centerVal + maxDistFromCenter]);
       }
   });
@@ -1246,13 +1232,13 @@ RulerChart.prototype.recenterDomains = function(d) {
 RulerChart.prototype.reScale = function() {
   var self = this;
 
-  self.generateAxes(self.xAxes, 'x', self.config.transition.durationShort);
+  self.generateAxes(self.axes.x, 'x', self.config.transition.durationShort);
 
   self.svg.selectAll('.g-circle')
     .style('pointer-events', 'none')
       .transition()
           .duration(self.config.transition.durationShort)
-        .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.xSpacingInY(d.xAxisName) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.xAxisSpacing(d.xAxisName) + ')'; })
         .each('end', function() { d3.select(this).style('pointer-events', null); });
 }
 
@@ -1266,7 +1252,7 @@ RulerChart.prototype.reSize = function() {
   // Re-space circles
   this.series.each(function(p) {
     d3.select(this).selectAll('.g-circle')
-      .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.xSpacingInY(d.xAxisName) + ')'; });
+      .attr('transform', function(d) { return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.xAxisSpacing(d.xAxisName) + ')'; });
   });
 }
 
@@ -1344,7 +1330,7 @@ XYPlot.prototype.draw = function() {
         self.recenterDomains(d);
 
         // Transition clicked circle instantaneously to avoid conflicts with listeners
-        d3.select(this).attr('transform', 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.y[d.yAxisName](d.yValue) + ')');
+        d3.select(this).attr('transform', 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.scales.y[d.yAxisName](d.yValue) + ')');
 
         // Re-draw and animate axes and circles using new domains
         self.reScale();
@@ -1428,10 +1414,10 @@ XYPlot.prototype.draw = function() {
       self.removeSelection('.dataLabel');
 
       // Reset domanins back to original values
-      d3.keys(self.dimensions.x).map(function(p) { self.x[p].domain(self.dimensions.x[p].calcs.origExtent); });
-      d3.keys(self.dimensions.y).map(function(p) { self.y[p].domain(self.dimensions.y[p].calcs.origExtent); });
-      self.setXSpacingInYRange();
-      self.setYSpacingInXRange();
+      d3.keys(self.dimensions.x).map(function(p) { self.scales.x[p].domain(self.dimensions.x[p].calcs.origExtent); });
+      d3.keys(self.dimensions.y).map(function(p) { self.scales.y[p].domain(self.dimensions.y[p].calcs.origExtent); });
+      self.setXAxisSpacingRange();
+      self.setYAxisSpacingRange();
 
       // Re-draw and animate axes and circles using new domains
       self.reScale();
@@ -1458,9 +1444,7 @@ XYPlot.prototype.addOriginCircle = function() {
           .attr('r', self.config.radius.normal - 1) // Hack to retain mouseover on centered circle's perimeter
           .style('fill-opacity', 0)
           .attr('transform', function() {
-            var x = self.x[d3.keys(self.dimensions.x)[0]](self.xIntercept);
-            var y = self.y[d3.keys(self.dimensions.y)[0]](self.yIntercept);
-            return 'translate(' + x + ', ' + y + ')';
+            return 'translate(' + self.scales.x[d3.keys(self.dimensions.x)[0]](self.intercept.x) + ', ' + self.scales.y[d3.keys(self.dimensions.y)[0]](self.intercept.y) + ')';
           });
 
   // Add listeners to origin circle
@@ -1491,36 +1475,25 @@ XYPlot.prototype.recenterDomains = function(d) {
   var maxDistFromCenter;
   var self = this;
 
-  d3.keys(self.dimensions.x).map(function(p) {
-    // Reset scale to original state
-    self.x[p].domain(self.dimensions.x[p].calcs.origExtent);
+  d3.keys(self.dimensions).map(function(a) {
+    d3.keys(self.dimensions[a]).map(function(p) {
+      // Reset scale to original state
+      self.scales[a][p].domain(self.dimensions[a][p].calcs.origExtent);
 
-    // Recompute scale, centering on selected series
-    minMax = self.x[p].domain();
-    centerVal = d.xValue;
-    distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
-    maxDistFromCenter = d3.max(distFromCenter);
-    self.x[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
+      // Recompute scale, centering on selected series
+      minMax = self.scales[a][p].domain();
+      centerVal = d[a+'Value'];
+      distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
+      maxDistFromCenter = d3.max(distFromCenter);
+      self.scales[a][p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
 
-    // Respace axis at new intercept
-    self.xIntercept = d.xValue;
-    self.ySpacingInX.range([self.x[p](d.xValue), self.x[p](d.xValue)]);
-  });
+      // Set new intercept
+      self.intercept[a] = d[a+'Value'];
 
-  d3.keys(self.dimensions.y).map(function(p) {
-    // Reset scale to original state
-    self.y[p].domain(self.dimensions.y[p].calcs.origExtent);
-
-    // Recompute scale, centering on selected series
-    minMax = self.y[p].domain();
-    centerVal = d.yValue;
-    distFromCenter = [Math.abs(centerVal - minMax[0]), Math.abs(minMax[1] - centerVal)];
-    maxDistFromCenter = d3.max(distFromCenter);
-    self.y[p].domain([centerVal - maxDistFromCenter, centerVal + maxDistFromCenter]);
-
-    // Respace axis at new intercept
-    self.yIntercept = d.yValue;
-    self.xSpacingInY.range([self.y[p](d.yValue), self.y[p](d.yValue)]);
+      // Re-position axes
+      var b = (a === 'x') ? 'y' : 'x';
+      self[b+'AxisSpacing'].range([self.scales[a][p](centerVal), self.scales[a][p](centerVal)]);
+    });
   });
 }
 
@@ -1531,8 +1504,8 @@ XYPlot.prototype.reScale = function() {
   this.updateYAxesLocation(this.config.transition.durationShort);
 
   // Re-draw axes
-  this.generateAxes(this.xAxes, 'x', this.config.transition.durationShort);
-  this.generateAxes(this.yAxes, 'y', this.config.transition.durationShort);
+  this.generateAxes(this.axes.x, 'x', this.config.transition.durationShort);
+  this.generateAxes(this.axes.y, 'y', this.config.transition.durationShort);
 
   // Re-draw data points
   var self = this;
@@ -1540,7 +1513,7 @@ XYPlot.prototype.reScale = function() {
     .style('pointer-events', 'none')
       .transition()
           .duration(self.config.transition.durationShort)
-        .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.y[d.yAxisName](d.yValue) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.scales.y[d.yAxisName](d.yValue) + ')'; })
         .each('end', function() { d3.select(this).style('pointer-events', null); });
 
   // Re-draw origin circle
@@ -1562,7 +1535,7 @@ XYPlot.prototype.drawLineFromOrigin = function(d, extrapolate, animate) {
     path.attr('d', self.pathFromOrigin(d, extrapolate));
   } else {
     // Animate line from origin to data point; fade out and remove at end of animation
-    var origin = [self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)];
+    var origin = [self.yAxisSpacing(d.yAxisName), self.xAxisSpacing(d.xAxisName)];
     path.attr('d', self.line([origin, origin]))
         .transition()
             .delay(self.config.delayScale(d.seriesIndex))
@@ -1586,24 +1559,24 @@ XYPlot.prototype.pathFromOrigin = function(d, extrapolate) {
   var self = this;
 
   // Origin
-  coords.push([self.ySpacingInX(d.yAxisName), self.xSpacingInY(d.xAxisName)]);
+  coords.push([self.yAxisSpacing(d.yAxisName), self.xAxisSpacing(d.xAxisName)]);
 
   if(!extrapolate) {
     // Data point
-    coords.push([self.x[d.xAxisName](d.xValue), self.y[d.yAxisName](d.yValue)]);
+    coords.push([self.scales.x[d.xAxisName](d.xValue), self.scales.y[d.yAxisName](d.yValue)]);
   } else {
-    xDelta = d.xValue - self.xIntercept;
-    yDelta = d.yValue - self.yIntercept;
-    xBound = (xDelta >= 0) ? self.x[d.xAxisName].domain()[1] : self.x[d.xAxisName].domain()[0];
-    yBound = (yDelta >= 0) ? self.y[d.yAxisName].domain()[1] : self.y[d.yAxisName].domain()[0];
+    xDelta = d.xValue - self.intercept.x;
+    yDelta = d.yValue - self.intercept.y;
+    xBound = (xDelta >= 0) ? self.scales.x[d.xAxisName].domain()[1] : self.scales.x[d.xAxisName].domain()[0];
+    yBound = (yDelta >= 0) ? self.scales.y[d.yAxisName].domain()[1] : self.scales.y[d.yAxisName].domain()[0];
     slope = yDelta / xDelta;
     if(isFinite(slope)) {
-      yExtrapolate = (slope * (xBound - self.xIntercept)) + self.yIntercept;
+      yExtrapolate = (slope * (xBound - self.intercept.x)) + self.intercept.y;
       if(((yDelta >= 0) && (yExtrapolate <= yBound)) || ((yDelta < 0) && (yExtrapolate >= yBound))) {
-        coords.push([self.x[d.xAxisName](xBound), self.y[d.yAxisName](yExtrapolate)]);
+        coords.push([self.scales.x[d.xAxisName](xBound), self.scales.y[d.yAxisName](yExtrapolate)]);
       } else {
-        xExtrapolate = ((yBound - self.yIntercept) * (1 / slope)) + self.xIntercept;
-        coords.push([self.x[d.xAxisName](xExtrapolate), self.y[d.yAxisName](yBound)]);
+        xExtrapolate = ((yBound - self.intercept.y) * (1 / slope)) + self.intercept.x;
+        coords.push([self.scales.x[d.xAxisName](xExtrapolate), self.scales.y[d.yAxisName](yBound)]);
       }
     }
   }
@@ -1621,7 +1594,7 @@ XYPlot.prototype.reSize = function() {
   // Re-space circles
   this.series.each(function(p) {
     d3.select(this).selectAll('.g-circle')
-      .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.y[d.yAxisName](d.yValue) + ')'; });
+      .attr('transform', function(d) { return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.scales.y[d.yAxisName](d.yValue) + ')'; });
   });
 
   // Re-draw origin circle
@@ -1728,7 +1701,7 @@ ScatterPlot.prototype.reSize = function() {
   // Re-space circles
   this.series.each(function(p) {
     d3.select(this).selectAll('.g-circle')
-      .attr('transform', function(d) { return 'translate(' + self.x[d.xAxisName](d.xValue) + ',' + self.y[d.yAxisName](d.yValue) + ')'; });
+      .attr('transform', function(d) { return 'translate(' + self.scales.x[d.xAxisName](d.xValue) + ',' + self.scales.y[d.yAxisName](d.yValue) + ')'; });
   });
 
   // Re-draw gridlines
