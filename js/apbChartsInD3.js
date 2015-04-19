@@ -368,13 +368,13 @@ BaseChart.prototype.destroyChart = function() {
 // Set x-axis range
 BaseChart.prototype.setXAxisRange = function() {
   var self = this;
-  d3.keys(self.dimensions.x).map(function(p) { self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
+  d3.keys(self.dimensions.x).forEach(function(p) { self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]); });
 }
 
 // Set y-axis range
 BaseChart.prototype.setYAxisRange = function() {
   var self = this;
-  d3.keys(self.dimensions.y).map(function(p) { self.scales.y[p].range([self.config.height, 0]); });
+  d3.keys(self.dimensions.y).forEach(function(p) { self.scales.y[p].range([self.config.height, 0]); });
 }
 
 // Set x-spacing-in y-range
@@ -644,9 +644,9 @@ BaseChart.prototype.addChartGridLines = function() {
 
   // Get axes ticks; filter out intercepts and domain ends
   var ticks = {};
-  d3.keys(self.dimensions).map(function(a) {
+  d3.keys(self.dimensions).forEach(function(a) {
       ticks[a] = {};
-    d3.keys(self.dimensions[a]).map(function(p) {
+    d3.keys(self.dimensions[a]).forEach(function(p) {
       ticks[a].name = p;
       ticks[a].data = self.scales[a][p].ticks(self.tickCount())
                               .filter(function(d) {
@@ -726,17 +726,17 @@ BaseChart.prototype.addChartDataPoints = function() {
           .append('circle')
           .attr('class', 'circle')
           .attr('r', config.radius.normal)
-          .style('fill', function(d) {
-              d.circle = this;  // http://bl.ocks.org/mbostock/8033015
-              return config.colorScale(d.seriesIndex);
-            });
+          .style('fill', function(d) { return config.colorScale(d.seriesIndex); })
+          .each(function(d) {
+            // http://bl.ocks.org/mbostock/8033015
+            d.circle = this;
+          });
 
       // Animate position
       d3.select(this).selectAll('.g-circle')
         .attr('transform', function(d) {
-            // Position circles at intercepts
-            var x = (d.yAxisName != null) ? self.yAxisSpacing(d.yAxisName) : 0;
-            return 'translate(' + x + ', ' + self.xAxisSpacing(d.xAxisName) + ')';
+            // Position data points at initial positions
+            return 'translate(' + self.getInitialPosition(d)[0] + ', ' + self.getInitialPosition(d)[1] + ')';
           })
         .transition()
             .delay(function(d) { return config.delayScale(d.seriesIndex); })
@@ -906,9 +906,9 @@ BaseChart.prototype.addVoronoiPaths = function() {
   var self = this;
 
   // Push all data points into an array
-  for(var prop in d3.keys(self.seriesData)) {
-    self.seriesData[prop].dataObjects.map(function(d) { self.allDataPoints.push(d); });
-  }
+  d3.keys(self.seriesData).forEach(function(g) {
+    self.seriesData[g].dataObjects.forEach(function(d) { self.allDataPoints.push(d); });
+  });
 
   // Create a voronoi layout
   this.voronoi = d3.geom.voronoi()
@@ -962,6 +962,34 @@ BaseChart.prototype.updateVoronoiPaths = function() {
           .data(this.voronoi(this.voronoiRollup(this.allDataPoints)))
           .attr('d', function(d) { return 'M' + d.join('L') + 'Z'; })
           .datum(function(d) { return d.point; });
+}
+
+// Data statistics
+BaseChart.prototype.summarizeData = function() {
+  var self = this;
+  d3.keys(self.dimensions).forEach(function(a) {
+    d3.keys(self.dimensions[a]).forEach(function(p) {
+      self.dimensions[a][p].stats = {};
+
+      d3.nest()
+        .key(function(g) { return g.seriesIndex; })
+        .rollup(function(g) {
+          return {
+            'mean': d3.mean(g, function(d) { return d.value; }),
+            'deviation': d3.deviation(g, function(d) { return d.value; })
+          };
+        })
+        .entries(self.dimensions[a][p].dataObjects)
+        .forEach(function(s) {
+          self.dimensions[a][p].stats[s.key] = {
+            'axisName': p,
+            'seriesIndex': s.key,
+            'mean': s.values.mean,
+            'deviation': s.values.deviation
+          };
+        });
+    });
+  });
 }
 
 // Parent draw function to generate basic chart layout
@@ -1041,7 +1069,7 @@ BaseChart.prototype.reSize = function() {
  * Chart numeric data across multiple dimensions for multiple data series
  * Each dimension is represented by an independent x-axis with individual domains, minimums and maximums
  * Resembles a 'multiples' chart
- * Alternative to a grouped bar chart when visualizing data across multiple (somewhat) unrelated dimensions
+ * Alternative to a grouped bar chart when visualizing data across multiple distinct dimensions
  *
 */
 
@@ -1175,9 +1203,11 @@ RulerChart.prototype.draw = function() {
       self.removeSelection('.dataLabel');
 
       // Reset x axis domain to original extent
-      d3.keys(self.dimensions.x).map(function(p) {
+      d3.keys(self.dimensions.x).forEach(function(p) {
         self.dimensions.x[p].calcs.floorXpx = 0;
-        self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width]).domain(self.dimensions.x[p].calcs.origExtent);
+        self.scales.x[p]
+            .range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
+            .domain(self.dimensions.x[p].calcs.origExtent);
       });
 
       // Re-draw and animate x axes and circles using new domains
@@ -1186,6 +1216,11 @@ RulerChart.prototype.draw = function() {
       // Update voronoi paths
       self.updateVoronoiPaths();
     });
+}
+
+// Returns initial positions for chart data points for use by addChartDataPoints
+RulerChart.prototype.getInitialPosition = function(d) {
+  return [0, this.xAxisSpacing(d.xAxisName)];
 }
 
 // Overrides BaseChart.pathToAxes()
@@ -1205,7 +1240,7 @@ RulerChart.prototype.recenterDomains = function(d) {
   var maxDistFromCenter;
   var self = this;
 
-  d3.keys(self.dimensions.x).map(function(p) {
+  d3.keys(self.dimensions.x).forEach(function(p) {
       // Reset scale to original state
       self.dimensions.x[p].calcs.floorXpx = 0;
       self.scales.x[p].range([self.dimensions.x[p].calcs.floorXpx, self.config.width])
@@ -1414,8 +1449,11 @@ XYPlot.prototype.draw = function() {
       self.removeSelection('.dataLabel');
 
       // Reset domanins back to original values
-      d3.keys(self.dimensions.x).map(function(p) { self.scales.x[p].domain(self.dimensions.x[p].calcs.origExtent); });
-      d3.keys(self.dimensions.y).map(function(p) { self.scales.y[p].domain(self.dimensions.y[p].calcs.origExtent); });
+      d3.keys(self.dimensions).forEach(function(a) {
+        d3.keys(self.dimensions[a]).forEach(function(p) {
+          self.scales[a][p].domain(self.dimensions[a][p].calcs.origExtent);
+        })
+      });
       self.setXAxisSpacingRange();
       self.setYAxisSpacingRange();
 
@@ -1425,6 +1463,11 @@ XYPlot.prototype.draw = function() {
       // Update voronoi paths
       self.updateVoronoiPaths();
     });
+}
+
+// Returns initial positions for chart data points for use by addChartDataPoints
+XYPlot.prototype.getInitialPosition = function(d) {
+  return [this.yAxisSpacing(d.yAxisName), this.xAxisSpacing(d.xAxisName)];
 }
 
 // Adds invisible circle at origin
@@ -1475,8 +1518,8 @@ XYPlot.prototype.recenterDomains = function(d) {
   var maxDistFromCenter;
   var self = this;
 
-  d3.keys(self.dimensions).map(function(a) {
-    d3.keys(self.dimensions[a]).map(function(p) {
+  d3.keys(self.dimensions).forEach(function(a) {
+    d3.keys(self.dimensions[a]).forEach(function(p) {
       // Reset scale to original state
       self.scales[a][p].domain(self.dimensions[a][p].calcs.origExtent);
 
@@ -1628,6 +1671,9 @@ ScatterPlot.prototype.draw = function() {
   // Call parent draw function for basic chart layout
   this.parent.draw.call(this);
 
+  // Summarize data
+  this.summarizeData();
+
   // Add gridlines
   this.addChartGridLines();
 
@@ -1689,6 +1735,14 @@ ScatterPlot.prototype.draw = function() {
       // Hide reset button
       self.setElemDisplay('.reset-btn', false);
     });
+}
+
+// Returns initial positions for chart data points for use by addChartDataPoints
+ScatterPlot.prototype.getInitialPosition = function(d) {
+  return [
+    this.scales.x[d.xAxisName](this.dimensions.x[d.xAxisName].stats[d.seriesIndex].mean),
+    this.scales.y[d.yAxisName](this.dimensions.y[d.yAxisName].stats[d.seriesIndex].mean)
+  ];
 }
 
 // Resizes chart
